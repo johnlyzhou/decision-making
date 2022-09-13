@@ -1,1 +1,3 @@
-# decision-making
+# Decision Making
+
+A package designed to model decision-making behaviors in mice from 2AFC task experiments. In progress...

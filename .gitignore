@@ -1,3 +1,18 @@
+
+
+
+/data
+/experiments
+/results
+/lightning_logs
+/tb_logs
+/test_logs
+
+.ipynb_checkpoints
+.idea
+*.egg-info/
+__pycache__/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

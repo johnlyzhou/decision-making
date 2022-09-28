@@ -1,10 +1,10 @@
 from src.agents import QLearningAgent, BeliefStateAgent
-from src.switch_2afc_task import Switch2AFCTask, run_experiment
+from src.block_2afc_task import Block2AFCTask, run_experiment
 from src.visualize import plot_psychometric_curve
 
 test_blocks = [('LOW', 1.0, 100), ('HIGH', 1.0, 100)]
 
-test_task = Switch2AFCTask(test_blocks)
+test_task = Block2AFCTask(test_blocks)
 
 learning_rate = 1.0
 epsilon = 0.05

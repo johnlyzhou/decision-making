@@ -16,7 +16,7 @@ STIMULI_FREQS = [6, 10, 12, 16]
 ACTIONS = {'LEFT': 0, 'RIGHT': 1}
 
 
-class Switch2AFCTask:
+class Block2AFCTask:
     """2AFC perceptual decision-making task with switching category boundaries from Liu, Xin, and Xu 2021."""
     def __init__(self, blocks, balance_mode="reward"):
         self.validate_blocks(blocks)

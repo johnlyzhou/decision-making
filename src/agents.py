@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.switch_2afc_task import STIMULI_FREQS, ACTIONS, BOUNDARY_IDX, BOUNDARY_FREQS
+from src.block_2afc_task import STIMULI_FREQS, ACTIONS, BOUNDARY_IDX, BOUNDARY_FREQS
 
 
 class QLearningAgent:

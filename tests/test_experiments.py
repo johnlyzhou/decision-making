@@ -2,8 +2,8 @@
 
 import unittest
 
-from src.agents import QLearningAgent, BeliefStateAgent
-from src.block_2afc_task import Block2AFCTask, run_experiment
+from src.data.agents import QLearningAgent, BeliefStateAgent
+from src.data.environments import Block2AFCTask, run_experiment
 
 TEST_BLOCKS = [('LOW', 1.0, 100), ('HIGH', 1.0, 100), ('LOW', 1.0, 100), ('HIGH', 1.0, 100)]
 

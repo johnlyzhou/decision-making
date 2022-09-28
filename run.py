@@ -1,6 +1,6 @@
-from src.agents import QLearningAgent, BeliefStateAgent
-from src.block_2afc_task import Block2AFCTask, run_experiment
-from src.visualize import plot_psychometric_curve
+from src.data.agents import QLearningAgent, BeliefStateAgent
+from src.data.environments import Block2AFCTask, run_experiment
+from src.visualization.visualize import plot_psychometric_curve
 
 test_blocks = [('LOW', 1.0, 100), ('HIGH', 1.0, 100)]
 

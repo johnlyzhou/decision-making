@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.block_2afc_task import STIMULI_FREQS, ACTIONS, BOUNDARY_IDX, BOUNDARY_FREQS
+from src.data.environments import STIMULI_FREQS, ACTIONS, BOUNDARY_FREQS
 
 
 class QLearningAgent:
@@ -108,3 +108,9 @@ class BeliefStateAgent:
         new_boundary_beliefs /= sum(new_boundary_beliefs)
         self.boundary_beliefs = new_boundary_beliefs
         self.boundary_belief_history.append(new_boundary_beliefs)
+
+
+class SwitchingAgent:
+    def __init__(self):
+        pass
+

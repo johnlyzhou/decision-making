@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from src.block_2afc_task import STIMULI_FREQS
+from src.data.environments import STIMULI_FREQS
 
 
 def get_block_indices(blocks, block_idx):

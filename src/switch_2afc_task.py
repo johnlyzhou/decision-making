@@ -21,6 +21,7 @@ class Switch2AFCTask:
     def __init__(self, blocks, balance_mode="reward"):
         self.validate_blocks(blocks)
         self.blocks = blocks
+        self.total_trials = sum(block[2] for block in self.blocks)
         self.balance_mode = balance_mode
         self.current_block = 0
         self.block_stimulus_schedule = None
@@ -87,7 +88,7 @@ class Switch2AFCTask:
 
     def end(self):
         """Set ending flag for environment after all trials in all blocks have finished."""
-        print("Simulation finished!")
+        # print("Simulation finished!")
         self.done = True
 
     def reset(self):
@@ -150,9 +151,9 @@ class Switch2AFCTask:
         return stimuli_schedule, reward_schedule
 
 
-def run_experiment(env, agent, block_params):
+def run_experiment(env, agent):
     """Run an agent through an experiment with parameters set by block_params."""
-    for ep in range(sum(block[2] for block in block_params)):
+    for ep in range(env.total_trials):
         env.step()
         if env.done:
             break

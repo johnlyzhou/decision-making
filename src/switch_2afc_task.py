@@ -1,34 +1,25 @@
-from collections import OrderedDict
 import random
 
 import numpy as np
 
 """Frequency boundaries separate stimuli that reward left choices from stimuli that reward right choices."""
-BOUNDARY_IDX = OrderedDict()
-BOUNDARY_IDX['LOW'] = 0
-BOUNDARY_IDX['HIGH'] = 1
+BOUNDARY_IDX = {'LOW': 0, 'HIGH': 1}
 """Indices in BOUNDARY_IDX map to actual frequency values of the boundaries in BOUNDARY_FREQS"""
 BOUNDARY_FREQS = [8, 14]
 
 """Dictionary keys represent the choice rewarded from the presentation of that stimulus (index)."""
-STIMULI_IDXS = OrderedDict()
-STIMULI_IDXS['LEFT'] = [0]
-STIMULI_IDXS['SWITCH'] = [1, 2]
-STIMULI_IDXS['RIGHT'] = [3]
+STIMULI_IDXS = {'LEFT': [0], 'SWITCH': [1, 2], 'RIGHT': [3]}
 """The indices in STIMULI_IDXS map to actual frequency values of the stimuli in STIMULI_FREQS."""
 STIMULI_FREQS = [6, 10, 12, 16]
 
 """Actions are choices the mouse can take. In a 2AFC task, it only has 2 choices: left or right)."""
-ACTIONS = OrderedDict()
-ACTIONS['LEFT'] = 0
-ACTIONS['RIGHT'] = 1
+ACTIONS = {'LEFT': 0, 'RIGHT': 1}
 
 
 class Switch2AFCTask:
-    """2AFC perceptual decision-making task from Liu, Xin, and Xu ."""
+    """2AFC perceptual decision-making task with switching category boundaries from Liu, Xin, and Xu 2021."""
     def __init__(self, blocks, balance_mode="reward"):
         self.validate_blocks(blocks)
-
         self.blocks = blocks
         self.balance_mode = balance_mode
         self.current_block = 0
@@ -37,10 +28,8 @@ class Switch2AFCTask:
         self.current_trial = -1
         self.current_stimulus = None
         self.current_reward = None
-
         self.stimulus_history = []
         self.reward_history = []
-
         self.done = False
 
     @staticmethod
@@ -60,11 +49,11 @@ class Switch2AFCTask:
         return True
 
     def get_current_stimuli(self):
-        """Return stimulus from current trial."""
+        """Return stimulus presented during current trial."""
         return self.current_stimulus
 
     def get_current_reward(self):
-        """Return ground truth reward choice from current trial (not the one received by the agent)."""
+        """Return correct choice for reward (not necessarily the one received by the agent)."""
         return self.current_reward
 
     def step(self):
@@ -97,29 +86,42 @@ class Switch2AFCTask:
         self.current_reward = self.block_reward_schedule[self.current_trial]
 
     def end(self):
-        """Set ending flag for environment object."""
+        """Set ending flag for environment after all trials in all blocks have finished."""
         print("Simulation finished!")
         self.done = True
 
+    def reset(self):
+        """Reset environment to initial state."""
+        self.current_block = 0
+        self.block_stimulus_schedule = None
+        self.block_reward_schedule = None
+        self.current_trial = -1
+        self.current_stimulus = None
+        self.current_reward = None
+        self.stimulus_history = []
+        self.reward_history = []
+        self.done = False
+
     def sample_schedule(self):
-        """Generate a schedule of trials for the current block."""
+        """Generate a schedule of trials for the current block, including the stimuli to be presented and the
+        corresponding correct choices required to receive a reward."""
         boundary, pr_reward, num_trials = self.blocks[self.current_block]
 
-        left_stim_idxs = STIMULI_IDXS['LEFT']
-        right_stim_idxs = STIMULI_IDXS['RIGHT']
+        left_stimuli_idxs = STIMULI_IDXS['LEFT']
+        right_stimuli_idxs = STIMULI_IDXS['RIGHT']
 
         if boundary == 'HIGH':
-            left_stim_idxs += STIMULI_IDXS['SWITCH']
+            left_stimuli_idxs += STIMULI_IDXS['SWITCH']
         elif boundary == 'LOW':
-            right_stim_idxs = STIMULI_IDXS['SWITCH'] + right_stim_idxs
+            right_stimuli_idxs = STIMULI_IDXS['SWITCH'] + right_stimuli_idxs
 
-        num_left_stimuli = len(left_stim_idxs)
-        num_right_stimuli = len(right_stim_idxs)
+        num_left_stimuli = len(left_stimuli_idxs)
+        num_right_stimuli = len(right_stimuli_idxs)
 
         if self.balance_mode == "reward":
             # Balance trials are based on rewarded choice.
             weights = np.ones_like(STIMULI_FREQS, dtype='float')
-            weights[left_stim_idxs] = weights[left_stim_idxs] * num_right_stimuli / num_left_stimuli
+            weights[left_stimuli_idxs] = weights[left_stimuli_idxs] * num_right_stimuli / num_left_stimuli
             normalized_weights = weights / np.sum(weights)
             stimuli_schedule = random.choices(range(len(STIMULI_FREQS)), weights=normalized_weights, k=num_trials)
 
@@ -131,7 +133,7 @@ class Switch2AFCTask:
         else:
             raise NotImplemented("Only 'reward' or 'stimulus' balance modes accepted.")
 
-        label_schedule = [stimuli in right_stim_idxs for stimuli in stimuli_schedule]
+        label_schedule = [stimuli in right_stimuli_idxs for stimuli in stimuli_schedule]
         reward_schedule = np.zeros_like(stimuli_schedule)
 
         for trial_idx in range(num_trials):
@@ -148,8 +150,8 @@ class Switch2AFCTask:
         return stimuli_schedule, reward_schedule
 
 
-def run_env(env, agent, block_params):
-    """Run an agent through and environment with parameters set by block_params."""
+def run_experiment(env, agent, block_params):
+    """Run an agent through an experiment with parameters set by block_params."""
     for ep in range(sum(block[2] for block in block_params)):
         env.step()
         if env.done:

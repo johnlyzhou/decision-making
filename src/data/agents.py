@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 
 from src.data.environments import STIMULI_FREQS, ACTIONS, BOUNDARY_FREQS
@@ -85,7 +87,6 @@ class BeliefStateAgent:
 
     def update(self, stimulus_idx, action, reward):
         """Recursively update beliefs over boundary location based on last trial's outcome."""
-        # Use to index into reward distribution and new boundary beliefs.
         low_boundary_idx = 0
         high_boundary_idx = 1
 
@@ -111,6 +112,33 @@ class BeliefStateAgent:
 
 
 class SwitchingAgent:
+    """Agent that switches strategies (0: Q learning or 1: belief state) according to a transition matrix."""
+    def __init__(self, transition_matrix, agents):
+        self.transition_matrix = transition_matrix
+        self.agents = agents
+        self.current_agent_idx = 0
+        if self.transition_matrix.shape[0] != len(self.agents) or self.transition_matrix.shape[1] != len(self.agents):
+            raise ValueError("Transition matrix shape should match number of agents!")
+        self.action_history = []
+        self.state_history = []
+
+    def sample_action(self, stimulus_idx):
+        """Sample an action according to a noisy stimulus perception and belief over current boundary location."""
+        action = self.agents[self.current_agent_idx].sample_action(stimulus_idx)
+        self.action_history.append(action)
+        return action
+
+    def update(self, stimulus_idx, action, reward):
+        self.state_history.append(self.current_agent_idx)
+        """All strategies are updated for each trial."""
+        for agent in self.agents:
+            agent.update(stimulus_idx, action, reward)
+        transition_probs = list(self.transition_matrix[self.current_agent_idx, :])
+        self.current_agent_idx = random.choices(range(len(self.agents)), transition_probs)[0]
+
+
+class RecurrentSwitchingAgent:
+    """Agent that switches strategies (Q learning or belief state) according to a transition matrix and parameters
+    of those strategies according to a continuous dynamics function."""
     def __init__(self):
         pass
-

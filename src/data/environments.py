@@ -29,8 +29,12 @@ class Block2AFCTask:
         self.current_trial = -1
         self.current_stimulus = None
         self.current_reward = None
+        self.stimulus_idx_history = []
         self.stimulus_history = []
         self.reward_history = []
+        self.boundary_history = []
+        for block in blocks:
+            self.boundary_history += [block[0] for _ in range(block[2])]
         self.done = False
 
     @staticmethod
@@ -79,8 +83,9 @@ class Block2AFCTask:
         # Check if we're starting a new block - if so, generate new trial schedule.
         if self.current_trial == -1:
             self.block_stimulus_schedule, self.block_reward_schedule = self.sample_schedule()
-            self.stimulus_history.append(self.block_stimulus_schedule)
-            self.reward_history.append(self.block_reward_schedule)
+            self.stimulus_idx_history += list(self.block_stimulus_schedule)
+            self.reward_history += list(self.block_reward_schedule)
+            self.stimulus_history += [STIMULI_FREQS[stim_idx] for stim_idx in list(self.block_stimulus_schedule)]
 
         self.current_trial += 1
         self.current_stimulus = self.block_stimulus_schedule[self.current_trial]
@@ -99,7 +104,7 @@ class Block2AFCTask:
         self.current_trial = -1
         self.current_stimulus = None
         self.current_reward = None
-        self.stimulus_history = []
+        self.stimulus_idx_history = []
         self.reward_history = []
         self.done = False
 
@@ -149,18 +154,3 @@ class Block2AFCTask:
                     reward_schedule[trial_idx] = 1 - label_schedule[trial_idx]
 
         return stimuli_schedule, reward_schedule
-
-
-def run_experiment(env, agent):
-    """Run an agent through an experiment with parameters set by block_params."""
-    for ep in range(env.total_trials):
-        env.step()
-        if env.done:
-            break
-        stimuli = env.get_current_stimuli()
-        action = agent.sample_action(stimuli)
-        rewarded_action = env.get_current_reward()
-        reward = (action == rewarded_action)
-        agent.update(stimuli, action, reward)
-
-    return env, agent

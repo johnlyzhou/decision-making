@@ -5,7 +5,12 @@ class SessionDataset:
     """Simplifies access to fields from .mat file."""
     def __init__(self, filename):
         data = io.loadmat(filename)['SessionData'][0][0]
-        self.num_trials = data['nTrial'].flatten()[0]
+        self.trial_settings = data['TrialSettings'][0]
+        self.stages = [setting[8][0] for setting in self.trial_settings]
+        self.left_stims = [setting[9][0] for setting in self.trial_settings]
+        self.switching_stims = [setting[10][0] for setting in self.trial_settings]
+        self.right_stims = [setting[11][0] for setting in self.trial_settings]
+        self.num_trials = data['nTrials'].flatten()[0]
         self.rewarded = data['Rewarded'].flatten()
         self.animal_weight = data['AnimalWeight'].flatten()[0]
         self.trial_start_time = data['TrialStartTimestamp'][0]

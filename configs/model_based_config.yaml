@@ -1,0 +1,26 @@
+environment: Block2AFCTask
+agent: BeliefStateAgent
+learning_rate: null
+epsilon: null
+p_reward: 1.0
+p_switch: 0.1
+blocks:
+- - LOW
+  - 1.0
+  - 100
+- - HIGH
+  - 1.0
+  - 100
+- - LOW
+  - 1.0
+  - 100
+- - HIGH
+  - 1.0
+  - 100
+- - LOW
+  - 1.0
+  - 100
+- - HIGH
+  - 1.0
+  - 100
+save_location: /Users/johnzhou/research/decision-making/figures

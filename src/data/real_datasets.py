@@ -34,3 +34,4 @@ class SessionDataset:
         self.performance = data['Performance'].flatten()
         self.left_performance = data['lPerformance'].flatten()
         self.right_performance = data['rPerformance'].flatten()
+

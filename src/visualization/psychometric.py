@@ -42,10 +42,10 @@ def plot_psychometric_curve(block_params, rewards, stimuli, actions):
     block_percents = []
     fig = plt.figure()
     for block_idx in range(len(block_params)):
-        psycho_rewards = rewards[block_idx]
-        psycho_stimuli = stimuli[block_idx]
-        action_idxs = get_block_indices(block_params, block_idx)
-        psycho_actions = actions[action_idxs[0]:action_idxs[1]]
+        block_start, block_end = get_block_indices(block_params, block_idx)
+        psycho_rewards = rewards[block_start:block_end]
+        psycho_stimuli = stimuli[block_start:block_end]
+        psycho_actions = actions[block_start:block_end]
         percents = get_psychometric_percents(psycho_actions, psycho_rewards, psycho_stimuli, len(STIMULI_FREQS))
         block_percents.append(percents)
         plt.scatter(STIMULI_FREQS, percents, label=f'{block_params[block_idx][0]}')

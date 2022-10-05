@@ -27,7 +27,7 @@ Install local packages and set up directory structure:
 ```
 pip install -e .
 ```
-Launch Jupyter notebook and open the example test.ipynb (currently in progress) to see how to use this package!
+Run an analysis with the run script and a config file specifying your experimental parameters (examples [here](https://github.com/johnlyzhou/motor-decoding/tree/main/configs)):
 ```
-jupyter notebook
+python run.py path_to_config.yaml
 ```

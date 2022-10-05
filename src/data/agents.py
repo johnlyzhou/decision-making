@@ -6,6 +6,10 @@ from src.data.environments import STIMULI_FREQS, ACTIONS, BOUNDARY_FREQS
 
 
 def validate_transition_matrix(transition_matrix):
+    """
+    Ensure that transition matrix is correctly formatted.
+    :param transition_matrix: symmetrical 2D numpy array containing transition probabilities between strategies/agents.
+    """
     if len(transition_matrix.shape) != 2:
         raise ValueError("Transition matrix should be 2D!")
     if transition_matrix.shape[0] != transition_matrix.shape[1]:
@@ -32,7 +36,7 @@ class QLearningAgent:
     def sample_action(self, stimulus_idx):
         """
         Choose an action according to an epsilon-greedy policy.
-        :param stimulus_idx: int indicating index of stimulus, references imported STIMULI_FREQS.
+        :param stimulus_idx: int indicating index of stimulus, references the imported STIMULI_FREQS list.
         :return: int representing index of the selected action.
         """
         explore = np.random.random() < self.epsilon
@@ -46,7 +50,7 @@ class QLearningAgent:
     def update(self, stimulus_idx, action, reward):
         """
         Update state-action value based on the observed rewards in this trial.
-        :param stimulus_idx: int indicating index of stimulus, references imported STIMULI_FREQS.
+        :param stimulus_idx: int indicating index of stimulus, references the imported STIMULI_FREQS list.
         :param action: int representing index of the selected action.
         :param reward: boolean or int indicating whether reward was received for the trial (takes value 0 or 1).
         """
@@ -101,7 +105,7 @@ class BeliefStateAgent:
     def sample_action(self, stimulus_idx):
         """
         Sample an action according to a noisy stimulus perception and belief over current boundary location.
-        :param stimulus_idx: int indicating index of stimulus, references imported STIMULI_FREQS.
+        :param stimulus_idx: int indicating index of stimulus, references the imported STIMULI_FREQS list.
         :return: int representing index of the selected action.
         """
         stimulus = STIMULI_FREQS[stimulus_idx]
@@ -121,7 +125,7 @@ class BeliefStateAgent:
     def update(self, stimulus_idx, action, reward):
         """
         Recursively update beliefs over boundary location based on last trial's outcome.
-        :param stimulus_idx: int indicating index of stimulus, references imported STIMULI_FREQS.
+        :param stimulus_idx: int indicating index of stimulus, references the imported STIMULI_FREQS list.
         :param action: int representing index of the selected action.
         :param reward: boolean or int in {0, 1} indicating whether reward was received for the trial.
         """
@@ -169,7 +173,7 @@ class SwitchingAgent:
     def sample_action(self, stimulus_idx):
         """
         Sample an action according to a noisy stimulus perception and belief over current boundary location.
-        :param stimulus_idx: int indicating index of stimulus, references imported STIMULI_FREQS.
+        :param stimulus_idx: int indicating index of stimulus, references the imported STIMULI_FREQS list.
         :return: int representing index of the selected action.
         """
         action = self.agents[self.current_agent_idx].sample_action(stimulus_idx)
@@ -205,7 +209,7 @@ class BlockSwitchingAgent:
     def sample_action(self, stimulus_idx):
         """
         Sample an action according to a noisy stimulus perception and belief over current boundary location.
-        :param stimulus_idx: int indicating index of stimulus, references imported STIMULI_FREQS.
+        :param stimulus_idx: int indicating index of stimulus, references the imported STIMULI_FREQS list.
         :return: int representing index of the selected action.
         """
         action = self.agents[self.current_agent_idx].sample_action(stimulus_idx)
@@ -215,7 +219,7 @@ class BlockSwitchingAgent:
     def update(self, stimulus_idx, action, reward, block_switch=False):
         """
         All strategies are updated for each trial, but transitions between strategies only happen between blocks.
-        :param stimulus_idx: int indicating index of stimulus, references imported STIMULI_FREQS.
+        :param stimulus_idx: int indicating index of stimulus, references the imported STIMULI_FREQS list.
         :param action: int representing index of the selected action.
         :param reward: boolean or int indicating whether reward was received for the trial (takes value 0 or 1).
         :param block_switch: boolean indicating whether or not there is a block transition.

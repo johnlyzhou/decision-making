@@ -19,6 +19,11 @@ ACTIONS = {'LEFT': 0, 'RIGHT': 1}
 class Block2AFCTask:
     """2AFC perceptual decision-making task with switching category boundaries from Liu, Xin, and Xu 2021."""
     def __init__(self, blocks, balance_mode="reward"):
+        """
+        :param blocks: list of tuples, where each tuple represents a block with format (boundary, reward_probability,
+        num_trials).
+        :param balance_mode: string indicating how probabilities of stimulus appearances should be balanced.
+        """
         self.validate_blocks(blocks)
         self.blocks = blocks
         self.total_trials = sum(block[2] for block in self.blocks)
@@ -39,7 +44,12 @@ class Block2AFCTask:
 
     @staticmethod
     def validate_blocks(blocks):
-        """Ensure block parameters are in the correct format."""
+        """
+        Ensure block parameters are in the correct format.
+        :param blocks: list of tuples, where each tuple represents a block with format (boundary, reward_probability,
+        num_trials).
+        :return: True if block parameters are in the correct format.
+        """
         if not all([len(block) == 3 for block in blocks]):
             raise ValueError("Block parameters should be formatted in a list of tuples (boundary, reward_probability, "
                              "num_trials).")
@@ -109,8 +119,12 @@ class Block2AFCTask:
         self.done = False
 
     def sample_schedule(self):
-        """Generate a schedule of trials for the current block, including the stimuli to be presented and the
-        corresponding correct choices required to receive a reward."""
+        """
+        Generate a schedule of trials for the current block, including the stimuli to be presented and the
+        corresponding correct choices required to receive a reward.
+        :return: two lists of ints of length equal to the number of trials in the block, the first containing indices of
+        stimuli presented, the second containing which action will be rewarded, in {0, 1} with 0: left and 1: right.
+        """
         boundary, pr_reward, num_trials = self.blocks[self.current_block]
 
         left_stimuli_idxs = STIMULI_IDXS['LEFT']

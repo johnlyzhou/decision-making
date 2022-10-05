@@ -8,6 +8,9 @@ from src.visualization.visualize_expt import plot_psychometric_curve
 
 class Experiment:
     def __init__(self, config):
+        """
+        :param config: string containing path to config file.
+        """
         self.config = OmegaConf.load(config)
 
         if self.config["environment"].lower() == "block2afctask":
@@ -69,6 +72,10 @@ class Experiment:
                 self.agent.update(stimuli, agent_action, reward)
 
     def plot_psychometric_scatter(self, save=False, path=None):
+        """
+        :param save: boolean indicating whether to save psychometric scatter plot.
+        :param path: string indicating file path in which figure will be saved.
+        """
         if not self.environment.done:
             raise Exception("Run experiment before plotting results!")
 

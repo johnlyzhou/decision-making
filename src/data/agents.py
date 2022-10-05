@@ -5,9 +5,23 @@ import numpy as np
 from src.data.environments import STIMULI_FREQS, ACTIONS, BOUNDARY_FREQS
 
 
+def validate_transition_matrix(transition_matrix):
+    if len(transition_matrix.shape) != 2:
+        raise ValueError("Transition matrix should be 2D!")
+    if transition_matrix.shape[0] != transition_matrix.shape[1]:
+        raise ValueError("Transition matrix should be symmetrical!")
+    for row in range(transition_matrix.shape[0]):
+        if np.sum(transition_matrix[row]) != 1:
+            raise ValueError("Rows of transition probabilities should sum to 1!")
+
+
 class QLearningAgent:
     """A model-free agent that uses Q-learning to update state-action values in response to received rewards."""
     def __init__(self, learning_rate, epsilon):
+        """
+        :param learning_rate: float in range (0, inf] weighting the update of the current reward prediction error.
+        :param epsilon: float in range (0, 1] indicating probability of the agent taking an exploratory action.
+        """
         self.learning_rate = learning_rate
         self.epsilon = epsilon
         # Initialize a uniform probability distribution over actions for each stimulus.
@@ -16,7 +30,11 @@ class QLearningAgent:
         self.action_history = []
 
     def sample_action(self, stimulus_idx):
-        """Choose an action according to an epsilon-greedy policy."""
+        """
+        Choose an action according to an epsilon-greedy policy.
+        :param stimulus_idx: int indicating index of stimulus, references imported STIMULI_FREQS.
+        :return: int representing index of the selected action.
+        """
         explore = np.random.random() < self.epsilon
         if explore:
             action = np.random.randint(0, high=len(ACTIONS))
@@ -26,7 +44,12 @@ class QLearningAgent:
         return action
 
     def update(self, stimulus_idx, action, reward):
-        """Update state-action value based on the observed rewards in this trial."""
+        """
+        Update state-action value based on the observed rewards in this trial.
+        :param stimulus_idx: int indicating index of stimulus, references imported STIMULI_FREQS.
+        :param action: int representing index of the selected action.
+        :param reward: boolean or int indicating whether reward was received for the trial (takes value 0 or 1).
+        """
         self.stimulus_action_values[stimulus_idx][action] += self.learning_rate * (
                 reward - self.stimulus_action_values[stimulus_idx][action]
         )
@@ -36,6 +59,12 @@ class QLearningAgent:
 class BeliefStateAgent:
     """A model-based agent that tracks the location of the boundary separating left and right stimuli."""
     def __init__(self, p_reward, p_switch):
+        """
+        :param p_reward: float in range [0, 1] indicating the agent's belief of the probability it will receive a reward
+        if it takes the correct action.
+        :param p_switch: float in range [0, 1] indicating the agent's belief of the probability that the boundary has
+        switched.
+        """
         super().__init__()
         self.low_boundary_idx = 0
         self.high_boundary_idx = 1
@@ -70,7 +99,11 @@ class BeliefStateAgent:
         self.reward_distribution = reward_distribution
 
     def sample_action(self, stimulus_idx):
-        """Sample an action according to a noisy stimulus perception and belief over current boundary location."""
+        """
+        Sample an action according to a noisy stimulus perception and belief over current boundary location.
+        :param stimulus_idx: int indicating index of stimulus, references imported STIMULI_FREQS.
+        :return: int representing index of the selected action.
+        """
         stimulus = STIMULI_FREQS[stimulus_idx]
         self.perceived_stimulus = stimulus + np.random.normal(scale=1.0)
         boundary_idx = np.argmax(self.boundary_beliefs)
@@ -86,7 +119,12 @@ class BeliefStateAgent:
         return action
 
     def update(self, stimulus_idx, action, reward):
-        """Recursively update beliefs over boundary location based on last trial's outcome."""
+        """
+        Recursively update beliefs over boundary location based on last trial's outcome.
+        :param stimulus_idx: int indicating index of stimulus, references imported STIMULI_FREQS.
+        :param action: int representing index of the selected action.
+        :param reward: boolean or int in {0, 1} indicating whether reward was received for the trial.
+        """
         low_boundary_idx = 0
         high_boundary_idx = 1
 
@@ -112,8 +150,14 @@ class BeliefStateAgent:
 
 
 class SwitchingAgent:
-    """Agent that switches strategies (0: Q learning or 1: belief state) according to a transition matrix."""
+    """Agent that switches strategies according to a transition matrix."""
     def __init__(self, transition_matrix, agents):
+        """
+        :param transition_matrix: symmetrical numpy matrix where each entry is the probability of transitioning from the
+        agent indexed by the row to the agent indexed by the column. Elements in range [0, 1] and rows should sum to 1.
+        :param agents: list of Agent objects.
+        """
+        validate_transition_matrix(transition_matrix)
         self.transition_matrix = transition_matrix
         self.agents = agents
         self.current_agent_idx = 0
@@ -123,7 +167,11 @@ class SwitchingAgent:
         self.state_history = []
 
     def sample_action(self, stimulus_idx):
-        """Sample an action according to a noisy stimulus perception and belief over current boundary location."""
+        """
+        Sample an action according to a noisy stimulus perception and belief over current boundary location.
+        :param stimulus_idx: int indicating index of stimulus, references imported STIMULI_FREQS.
+        :return: int representing index of the selected action.
+        """
         action = self.agents[self.current_agent_idx].sample_action(stimulus_idx)
         self.action_history.append(action)
         return action
@@ -138,9 +186,14 @@ class SwitchingAgent:
 
 
 class BlockSwitchingAgent:
-    """Agent that switches strategies (0: Q learning or 1: belief state) according to a transition matrix, from block
-    to block."""
+    """Agent that switches strategies according to a transition matrix from block to block."""
     def __init__(self, transition_matrix, agents):
+        """
+        :param transition_matrix: symmetrical numpy matrix where each entry is the probability of transitioning from the
+        agent indexed by the row to the agent indexed by the column.
+        :param agents: list of Agent objects.
+        """
+        validate_transition_matrix(transition_matrix)
         self.transition_matrix = transition_matrix
         self.agents = agents
         self.current_agent_idx = 0
@@ -150,13 +203,23 @@ class BlockSwitchingAgent:
         self.state_history = []
 
     def sample_action(self, stimulus_idx):
-        """Sample an action according to a noisy stimulus perception and belief over current boundary location."""
+        """
+        Sample an action according to a noisy stimulus perception and belief over current boundary location.
+        :param stimulus_idx: int indicating index of stimulus, references imported STIMULI_FREQS.
+        :return: int representing index of the selected action.
+        """
         action = self.agents[self.current_agent_idx].sample_action(stimulus_idx)
         self.action_history.append(action)
         return action
 
     def update(self, stimulus_idx, action, reward, block_switch=False):
-        """All strategies are updated for each trial."""
+        """
+        All strategies are updated for each trial, but transitions between strategies only happen between blocks.
+        :param stimulus_idx: int indicating index of stimulus, references imported STIMULI_FREQS.
+        :param action: int representing index of the selected action.
+        :param reward: boolean or int indicating whether reward was received for the trial (takes value 0 or 1).
+        :param block_switch: boolean indicating whether or not there is a block transition.
+        """
         for agent in self.agents:
             agent.update(stimulus_idx, action, reward)
         if block_switch:
@@ -168,5 +231,7 @@ class BlockSwitchingAgent:
 class RecurrentSwitchingAgent:
     """Agent that switches strategies (Q learning or belief state) according to a transition matrix and parameters
     of those strategies according to a continuous dynamics function."""
-    def __init__(self):
+    def __init__(self, transition_matrix):
+        validate_transition_matrix(transition_matrix)
+        self.transition_matrix = transition_matrix
         pass

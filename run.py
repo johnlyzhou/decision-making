@@ -1,99 +1,67 @@
+import argparse
+
+import numpy as np
+import ssm
+from ssm.util import find_permutation
+
 from src.data.environments import STIMULI_FREQS, BOUNDARY_FREQS, BOUNDARY_IDX
 from src.data.experiments import Experiment
 from src.features.build_ssm_features import build_outputs
+import src.visualization.visualize_ssm as vizssm
+from src.utils import blockify
 
 
-import autograd.numpy as np
-
-import ssm
-from ssm.util import find_permutation
-from ssm.plots import gradient_cmap, white_to_color_cmap
-
-import matplotlib.pyplot as plt
-
-import seaborn as sns
-sns.set_style("white")
-sns.set_context("talk")
-
-color_names = [
-    "windows blue",
-    "red",
-    "amber",
-    "faded green",
-    "dusty purple",
-    "orange"
-    ]
-
-colors = sns.xkcd_palette(color_names)
-cmap = gradient_cmap(colors)
-
-
-if __name__ == "__main__":
-    config_path = "/Users/johnzhou/research/decision-making/configs/switching_config.yaml"
+def run(config_path, num_iters=1000, num_states=2, obs_type="trials", test=False):
+    # Run a simulated experiment according to the config file settings
     expt = Experiment(config_path)
     expt.run()
+    # Get a few attributes for visualization and analysis
     rewards = expt.environment.reward_history
     stimuli = [STIMULI_FREQS[stim_idx] for stim_idx in expt.environment.stimulus_idx_history]
     actions = expt.agent.action_history
     boundaries = [BOUNDARY_FREQS[BOUNDARY_IDX[bound_key]] for bound_key in expt.environment.boundary_history]
-    obs = build_outputs(actions, rewards)
-
-    expt.plot_psychometric_scatter()
-
-    N_iters = 50
-    num_states = 2
-    obs_dim = len(obs[0])
-    time_bins = expt.environment.total_trials
-
-    hmm = ssm.HMM(num_states, obs_dim, observations="bernoulli")
-    # hmm = ssm.HMM(num_states, 1, observations="bernoulli")
-
-    hmm_lls = hmm.fit(obs, method="em", num_iters=N_iters, init_method="kmeans")
-
-    # plt.plot(hmm_lls, label="EM")
-    # # plt.plot([0, num_iters], true_ll * np.ones(2), ':k', label="True")
-    # plt.xlabel("EM Iteration")
-    # plt.ylabel("Log Probability")
-    # plt.legend(loc="lower right")
-    # plt.show()
-
+    observations = build_outputs(actions, rewards)
     true_states = np.array(expt.agent.state_history)
-    most_likely_states = hmm.most_likely_states(obs)
+
+    # Fit on a block-by-block basis instead of trial-by-trial
+    # observations = blockify(expt.blocks, observations)
+    # print(len(observations))
+    # print(len(observations[0]))
+
+    # Check psychometric plots of block transitions to make sure they make sense
+    if not test:
+        expt.plot_psychometric_scatter()
+
+    # Fit HMM to observed data
+    obs_dim = len(observations[0])
+    hmm = ssm.HMM(num_states, obs_dim, observations="gaussian")
+    if test:
+        num_iters = 10
+    hmm_lls = hmm.fit(observations, method="em", num_iters=num_iters, init_method="kmeans")
+
+    # Permute states to most likely correct order
+    most_likely_states = hmm.most_likely_states(observations)
     hmm.permute(find_permutation(true_states, most_likely_states))
+    inferred_states = hmm.most_likely_states(observations)
 
-    # Plot the true and inferred discrete states
-    hmm_z = hmm.most_likely_states(obs)
+    # Look at fitting results
+    if not test:
+        vizssm.plot_em_fitting(hmm_lls)
 
-    plt.figure(figsize=(8, 4))
-    plt.subplot(211)
-    plt.imshow(true_states[None, :], aspect="auto", cmap=cmap, vmin=0, vmax=len(colors) - 1)
-    plt.xlim(0, time_bins)
-    plt.ylabel("$z_{\\mathrm{true}}$")
-    plt.yticks([])
+    # Look at inferred state results
+    if not test:
+        vizssm.plot_true_vs_inferred_states(true_states, inferred_states)
 
-    plt.subplot(212)
-    plt.imshow(hmm_z[None, :], aspect="auto", cmap=cmap, vmin=0, vmax=len(colors) - 1)
-    plt.xlim(0, time_bins)
-    plt.ylabel("$z_{\\mathrm{inferred}}$")
-    plt.yticks([])
-    plt.xlabel("time")
+    # Look at inferred transition matrix results
+    true_transition_matrix = expt.transition_matrix
+    inferred_transition_matrix = hmm.transitions.transition_matrix
+    if not test:
+        vizssm.plot_true_vs_inferred_transition_matrix(true_transition_matrix, inferred_transition_matrix)
 
-    plt.tight_layout()
 
-    plt.show()
-
-    true_transition_mat = expt.transition_matrix
-    learned_transition_mat = hmm.transitions.transition_matrix
-
-    fig = plt.figure(figsize=(8, 4))
-    plt.subplot(121)
-    im = plt.imshow(true_transition_mat, cmap='gray')
-    plt.title("True Transition Matrix")
-
-    plt.subplot(122)
-    im = plt.imshow(learned_transition_mat, cmap='gray')
-    plt.title("Learned Transition Matrix")
-
-    cbar_ax = fig.add_axes([0.95, 0.15, 0.05, 0.7])
-    fig.colorbar(im, cax=cbar_ax)
-    plt.show()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Run a simulated 2AFC task and fit a state space model.')
+    parser.add_argument('config', help='A required path to experiment configuration file.')
+    parser.add_argument('--test', action=argparse.BooleanOptionalAction)
+    args = parser.parse_args()
+    run(args.config, test=args.test)

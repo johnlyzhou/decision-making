@@ -1,9 +1,9 @@
 from omegaconf import OmegaConf
 import numpy as np
 
-from src.data.agents import QLearningAgent, BeliefStateAgent, SwitchingAgent
+from src.data.agents import QLearningAgent, BeliefStateAgent, SwitchingAgent, BlockSwitchingAgent
 from src.data.environments import Block2AFCTask
-from src.visualization.psychometric import plot_psychometric_curve
+from src.visualization.visualize_expt import plot_psychometric_curve
 
 
 class Experiment:
@@ -32,7 +32,7 @@ class Experiment:
 
             self.agent = BeliefStateAgent(self.p_reward, self.p_switch)
 
-        elif self.config["agent"].lower() == "switchingagent":
+        elif self.config["agent"].lower() == "switchingagent" or self.config["agent"].lower() == "blockswitchingagent":
             self.transition_matrix = np.array(self.config["transition_probs"])
             self.learning_rate = self.config["learning_rate"]
             self.epsilon = self.config["epsilon"]
@@ -46,7 +46,10 @@ class Experiment:
             agent0 = QLearningAgent(self.learning_rate, self.epsilon)
             agent1 = self.agent = BeliefStateAgent(self.p_reward, self.p_switch)
             agents = [agent0, agent1]
-            self.agent = SwitchingAgent(self.transition_matrix, agents)
+            if self.config["agent"].lower() == "switchingagent":
+                self.agent = SwitchingAgent(self.transition_matrix, agents)
+            elif self.config["agent"].lower() == "blockswitchingagent":
+                self.agent = BlockSwitchingAgent(self.transition_matrix, agents)
         else:
             raise NotImplementedError("QLearningAgent and BeliefStateAgent are the only implemented agents!")
 
@@ -60,7 +63,10 @@ class Experiment:
             agent_action = self.agent.sample_action(stimuli)
             correct_action = self.environment.get_current_reward()
             reward = (agent_action == correct_action)
-            self.agent.update(stimuli, agent_action, reward)
+            if self.environment.current_trial == 0 and type(self.agent) == BlockSwitchingAgent:
+                self.agent.update(stimuli, agent_action, reward, block_switch=True)
+            else:
+                self.agent.update(stimuli, agent_action, reward)
 
     def plot_psychometric_scatter(self, save=False, path=None):
         if not self.environment.done:

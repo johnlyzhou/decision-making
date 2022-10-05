@@ -2,14 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from src.data.environments import STIMULI_FREQS
-
-
-def get_block_indices(blocks, block_idx):
-    """Return the indices of the first and last trials of a block within all trials of the experiment."""
-    trial_idx = 0
-    for i in range(block_idx):
-        trial_idx += blocks[i][2]
-    return trial_idx, trial_idx + blocks[block_idx][2]
+from src.utils import get_block_indices
 
 
 def get_psychometric_percents(actions, rewards, stimuli, num_stimuli, action_type=None, reward_type=None,
@@ -42,7 +35,7 @@ def plot_psychometric_curve(block_params, rewards, stimuli, actions):
     block_percents = []
     fig = plt.figure()
     for block_idx in range(len(block_params)):
-        block_start, block_end = get_block_indices(block_params, block_idx)
+        block_start, block_end = get_block_indices(block_params)[block_idx]
         psycho_rewards = rewards[block_start:block_end]
         psycho_stimuli = stimuli[block_start:block_end]
         psycho_actions = actions[block_start:block_end]

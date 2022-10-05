@@ -27,7 +27,7 @@ Install local packages and set up directory structure:
 ```
 pip install -e .
 ```
-Run an analysis with the run script and a config file specifying your experimental parameters (examples [here](https://github.com/johnlyzhou/motor-decoding/tree/main/configs)):
+Run an analysis with the run script and a config file specifying your experimental parameters (examples [here](https://github.com/johnlyzhou/decision-making/tree/main/configs)):
 ```
 python run.py path_to_config.yaml
 ```

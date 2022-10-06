@@ -41,7 +41,7 @@ def plot_psychometric_curve(block_params, rewards, stimuli, actions):
         psycho_actions = actions[block_start:block_end]
         percents = get_psychometric_percents(psycho_actions, psycho_rewards, psycho_stimuli, len(STIMULI_FREQS))
         block_percents.append(percents)
-        plt.scatter(STIMULI_FREQS, percents, label=f'{block_params[block_idx][0]}')
+        plt.scatter(STIMULI_FREQS, percents, alpha=0.5, label=f'{block_params[block_idx][0]}')
         fig.legend()
     plt.show()
     return fig

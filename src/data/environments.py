@@ -127,8 +127,8 @@ class Block2AFCTask:
         """
         boundary, pr_reward, num_trials = self.blocks[self.current_block]
 
-        left_stimuli_idxs = STIMULI_IDXS['LEFT']
-        right_stimuli_idxs = STIMULI_IDXS['RIGHT']
+        left_stimuli_idxs = STIMULI_IDXS['LEFT'].copy()
+        right_stimuli_idxs = STIMULI_IDXS['RIGHT'].copy()
 
         if boundary == 'HIGH':
             left_stimuli_idxs += STIMULI_IDXS['SWITCH']

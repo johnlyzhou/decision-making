@@ -49,8 +49,6 @@ def switching_stimuli_psychometric(expt, match="rule"):
                 # Label an action as correct if it matches the actual rewarded action in the environment."
                 elif match == "actual":
                     block_switching_trials.append(actions[trial_idx] == rewards[trial_idx])
-                print(f"boundary: {boundary}, stimulus: {stimuli[trial_idx]}, action: {actions[trial_idx]}, correct: "
-                      f"{block_switching_trials[-1]}")
 
         switching_trials.append(block_switching_trials)
 

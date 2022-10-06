@@ -11,8 +11,8 @@ class Experiment:
         """
         :param config: string containing path to config file.
         """
-        self.config = OmegaConf.load(config)
         self.done = False
+        self.config = OmegaConf.load(config)
 
         if self.config["environment"].lower() == "block2afctask":
             self.blocks = self.config["blocks"]
@@ -64,20 +64,18 @@ class Experiment:
             if self.environment.done:
                 self.done = True
                 break
-            stimuli = self.environment.get_current_stimuli()
+            stimuli = self.environment.get_current_stimulus()
             agent_action = self.agent.sample_action(stimuli)
-            correct_action = self.environment.get_current_reward()
+            correct_action = self.environment.get_current_rewarded_action()
             reward = (agent_action == correct_action)
-            if self.environment.current_trial == 0 and type(self.agent) == BlockSwitchingAgent:
+            if self.environment.current_trial_idx == 0 and type(self.agent) == BlockSwitchingAgent:
                 self.agent.update(stimuli, agent_action, reward, block_switch=True)
             else:
                 self.agent.update(stimuli, agent_action, reward)
 
-    def plot_psychometric_scatter(self, save=False, path=None):
-        """
-        :param save: boolean indicating whether to save psychometric scatter plot.
-        :param path: string indicating file path in which figure will be saved.
-        """
+    def plot_psychometric_scatter(self):
+        """Plot psychometric scatter for experiment."""
+
         if not self.environment.done:
             raise Exception("Run experiment before plotting results!")
 
@@ -86,8 +84,4 @@ class Experiment:
         stimuli = self.environment.stimulus_idx_history
         rewards = self.environment.reward_history
 
-        fig = plot_psychometric_curve(blocks, rewards, stimuli, actions)
-        if save and path:
-            fig.savefig(path)
-        elif save:
-            raise ValueError("Save location not specified!")
+        plot_psychometric_curve(blocks, rewards, stimuli, actions)

@@ -1,4 +1,5 @@
 import random
+import copy
 
 import numpy as np
 
@@ -57,7 +58,8 @@ class QLearningAgent:
         self.stimulus_action_values[stimulus_idx][action] += self.learning_rate * (
                 reward - self.stimulus_action_values[stimulus_idx][action]
         )
-        self.stimulus_action_value_history.append(self.stimulus_action_values)
+        self.stimulus_action_values[stimulus_idx] /= sum(self.stimulus_action_values[stimulus_idx])
+        self.stimulus_action_value_history.append(copy.deepcopy(self.stimulus_action_values))
 
 
 class BeliefStateAgent:
@@ -232,7 +234,7 @@ class BlockSwitchingAgent:
             self.state_history.append(self.current_agent_idx)
 
 
-class RecurrentSwitchingAgent:
+class RecurrentBlockSwitchingAgent:
     """Agent that switches strategies (Q learning or belief state) according to a transition matrix and parameters
     of those strategies according to a continuous dynamics function."""
     def __init__(self, transition_matrix):

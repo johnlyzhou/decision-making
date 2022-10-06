@@ -1,6 +1,6 @@
 environment: Block2AFCTask
 agent: QLearningAgent
-learning_rate: 1.0
+learning_rate: 0.2
 epsilon: 0.05
 p_reward: null
 p_switch: null

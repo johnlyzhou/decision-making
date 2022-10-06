@@ -3,7 +3,7 @@ agent: BeliefStateAgent
 learning_rate: null
 epsilon: null
 p_reward: 1.0
-p_switch: 0.1
+p_switch: 0.25
 blocks:
 - - LOW
   - 1.0

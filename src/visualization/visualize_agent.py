@@ -21,4 +21,6 @@ def plot_action_values(stimulus_action_value_history, blocks):
         left_action_values = [trial[stimulus_idx][0] for trial in stimulus_action_value_history]
         plt.plot(left_action_values, label=f'Stimulus: {stimulus_idx}')
         fig.legend()
+    plt.xlim([0, len(stimulus_action_value_history)])
+    plt.axhline(y=0.5, color="black", linestyle='--')
     plt.show()

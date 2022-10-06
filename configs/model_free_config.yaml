@@ -1,26 +1,26 @@
 environment: Block2AFCTask
 agent: QLearningAgent
 learning_rate: 0.2
-epsilon: 0.05
+epsilon: 0.2
 p_reward: null
 p_switch: null
 blocks:
 - - LOW
   - 1.0
-  - 100
+  - 50
 - - HIGH
   - 1.0
-  - 100
+  - 50
 - - LOW
   - 1.0
-  - 100
+  - 50
 - - HIGH
   - 1.0
-  - 100
+  - 50
 - - LOW
   - 1.0
-  - 100
+  - 50
 - - HIGH
   - 1.0
-  - 100
+  - 50
 save_location: /Users/johnzhou/research/decision-making/figures

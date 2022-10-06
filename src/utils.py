@@ -18,3 +18,6 @@ def blockify(blocks, obs):
     if sum([block[2] for block in blocks]) != len(obs):
         raise ValueError("Observation length doesn't match block lengths!")
     return [obs[start:end] for start, end in indices]
+
+def make_side_agnostic(blocks, obs):
+    """Make blocks of observations side-agnostic by flipping all blocks of trials to make the """

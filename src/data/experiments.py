@@ -12,6 +12,7 @@ class Experiment:
         :param config: string containing path to config file.
         """
         self.config = OmegaConf.load(config)
+        self.done = False
 
         if self.config["environment"].lower() == "block2afctask":
             self.blocks = self.config["blocks"]
@@ -61,6 +62,7 @@ class Experiment:
         for ep in range(self.environment.total_trials + 1):
             self.environment.step()
             if self.environment.done:
+                self.done = True
                 break
             stimuli = self.environment.get_current_stimuli()
             agent_action = self.agent.sample_action(stimuli)

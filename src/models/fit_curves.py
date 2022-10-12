@@ -1,7 +1,5 @@
 import math
 
-from scipy.optimize import minimize
-
 
 def epsilon_logistic(x, eps, k, x_0):
     """

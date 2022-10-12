@@ -1,0 +1,26 @@
+environment: BlockStimulusTask
+agent: QLearningAgent
+learning_rate: 0.3
+epsilon: 0.3
+p_reward: null
+p_switch: null
+blocks:
+- - LOW
+  - 1.0
+  - 90
+- - HIGH
+  - 1.0
+  - 100
+- - LOW
+  - 1.0
+  - 100
+- - HIGH
+  - 1.0
+  - 100
+- - LOW
+  - 1.0
+  - 100
+- - HIGH
+  - 1.0
+  - 100
+save_location: /Users/johnzhou/research/decision-making/figures

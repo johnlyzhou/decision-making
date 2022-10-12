@@ -1,4 +1,4 @@
-environment: Block2AFCTask
+environment: BlockStimulusTask
 agent: QLearningAgent
 learning_rate: 1.0
 epsilon: 0

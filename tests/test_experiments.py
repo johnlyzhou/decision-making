@@ -1,7 +1,7 @@
 """This module checks basic functionality of the environments and agents, not designed to be rigorous or independent."""
 
 import unittest
-from src.data.environments import Block2AFCTask, STIMULI_IDXS, STIMULI_FREQS
+from src.data.environments import BlockStimulusTask, STIMULI_IDXS, STIMULI_FREQS
 from src.data.experiments import Experiment
 from src.utils import blockify
 
@@ -10,13 +10,9 @@ cwd = "/Users/johnzhou/research/decision-making"
 TEST_BLOCKS = [('LOW', 1.0, 100), ('HIGH', 1.0, 100), ('LOW', 1.0, 100), ('HIGH', 1.0, 100)]
 
 
-class TestQLearningAgent(unittest.TestCase):
-    pass
-
-
-class TestBlock2AFCTask(unittest.TestCase):
+class TestBlockStimulusTask(unittest.TestCase):
     def test_trial_counts(self):
-        env = Block2AFCTask(TEST_BLOCKS, balance_mode="reward")
+        env = BlockStimulusTask(TEST_BLOCKS, balance_mode="reward")
         for ep in range(sum(block[2] for block in TEST_BLOCKS) + 1):
             env.step()
             if env.done:
@@ -27,7 +23,7 @@ class TestBlock2AFCTask(unittest.TestCase):
                 sum(block[2] for block in TEST_BLOCKS))
 
     def test_sample_schedule(self):
-        env = Block2AFCTask(TEST_BLOCKS, balance_mode="reward")
+        env = BlockStimulusTask(TEST_BLOCKS, balance_mode="reward")
         for ep in range(sum(block[2] for block in TEST_BLOCKS) + 1):
             env.step()
             if env.done:
@@ -48,7 +44,7 @@ class TestBlock2AFCTask(unittest.TestCase):
             assert (reward_schedule[trial_idx] == (stimuli_schedule[trial_idx] in right_stimuli_idxs))
 
     def test_run(self):
-        env = Block2AFCTask(TEST_BLOCKS, balance_mode="reward")
+        env = BlockStimulusTask(TEST_BLOCKS, balance_mode="reward")
         for ep in range(sum(block[2] for block in TEST_BLOCKS) + 1):
             env.step()
             if env.done:

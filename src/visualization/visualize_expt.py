@@ -2,13 +2,17 @@ import itertools
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy import ndarray
+from scipy.special import expit
+from sklearn.linear_model import LogisticRegression
 
 from src.data.environments import STIMULI_FREQS, STIMULI_IDXS
+from src.data.experiments import Experiment
 from src.utils import get_block_indices
 
 
-def get_percent_left(actions, rewards, stimuli, num_stimuli, action_type=None, reward_type=None,
-                     stimulus_type=None):
+def get_percent_left(actions: list[int], rewards: list[int], stimuli: list[int], num_stimuli: int,
+                     action_type: int = None, reward_type: int = None, stimulus_type: int = None) -> ndarray:
     """Compute the percentage of left choices in a 2AFC task for different stimulus values."""
     if action_type:
         actions = [None if act != action_type else act for act in actions]
@@ -32,27 +36,25 @@ def get_percent_left(actions, rewards, stimuli, num_stimuli, action_type=None, r
     return num_left_actions / num_presentations
 
 
-def plot_psychometric_curve(block_params, rewards, stimuli, actions):
+def plot_psychometric_curve(blocks: list[tuple], rewards: list[int], stimuli: list[int], actions: list[int]) -> None:
     """Plot a psychometric scatter plot."""
     block_percents = []
     fig = plt.figure()
-    for block_idx in range(len(block_params)):
-        block_start, block_end = get_block_indices(block_params)[block_idx]
+    for block_idx in range(len(blocks)):
+        block_start, block_end = get_block_indices(blocks)[block_idx]
         psycho_rewards = rewards[block_start:block_end]
         psycho_stimuli = stimuli[block_start:block_end]
         psycho_actions = actions[block_start:block_end]
         percents = get_percent_left(psycho_actions, psycho_rewards, psycho_stimuli, len(STIMULI_FREQS))
         block_percents.append(percents)
-        plt.scatter(STIMULI_FREQS, percents, alpha=0.5, label=f'{block_params[block_idx][0]}')
+        plt.scatter(STIMULI_FREQS, percents, alpha=0.5, label=f'{blocks[block_idx][0]}')
         fig.legend()
     plt.show()
-    return fig
 
 
-def get_switching_stimuli_outcomes(expt, match="rule"):
+def get_switching_stimuli_outcomes(expt: Experiment, match: str = "rule") -> list[list[bool]]:
     """
-    Compute choice correctness (incorrect: 0, correct: 1) for each trial with a presentation of a switching stimulus in
-    a blockwise fashion.
+    Compute choice correctness for each trial with a presentation of a switching stimulus in a blockwise fashion.
     :param expt: Experiment object with completed results.
     :param match: string indicating which definition of "correctness" to use.
     :return: list of lists of 0s and 1s with outer length equal to the number of blocks and inner lengths equal to
@@ -89,9 +91,9 @@ def get_switching_stimuli_outcomes(expt, match="rule"):
     return switching_trials
 
 
-def plot_switching_stimuli_outcomes(switching_trials):
+def plot_switching_stimuli_outcomes(switching_trials: list[list[int]]) -> None:
     bounds = []
-    fig = plt.figure(figsize=(10, 1))
+    plt.figure(figsize=(10, 1))
     for block in switching_trials:
         if len(bounds) == 0:
             bounds.append(len(block))
@@ -102,3 +104,39 @@ def plot_switching_stimuli_outcomes(switching_trials):
     plt.scatter(range(len(switching_trials)), switching_trials, s=15)
     plt.xlim([0, len(switching_trials)])
     plt.show()
+
+
+def plot_switching_logistic_regression(switching_trials: list[list[int]]) -> None:
+    for block in switching_trials:
+        X = np.asarray(range(len(block)))
+        X = X[:, np.newaxis]
+        y = np.asarray(block)
+        clf = LogisticRegression(random_state=0).fit(X, y)
+        plt.figure(1, figsize=(5, 3))
+        plt.clf()
+        plt.scatter(X.ravel(), y, color="black", zorder=20)
+        X_test = np.linspace(0, y.size, 300)
+
+        loss = expit(X_test * clf.coef_ + clf.intercept_).ravel()
+        plt.plot(X_test, loss, color="red", linewidth=3)
+
+        plt.ylabel("y")
+        plt.xlabel("X")
+        plt.ylim(0, 1)
+        plt.xlim(0, y.size)
+        plt.tight_layout()
+        plt.show()
+
+
+def plot_psychometric_scatter(expt: Experiment) -> None:
+    """Plot psychometric scatter for experiment."""
+
+    if not expt.environment.done:
+        raise Exception("Run experiment before plotting results!")
+
+    blocks = expt.blocks
+    actions = expt.agent.action_history
+    stimuli = expt.environment.stimulus_idx_history
+    rewards = expt.environment.reward_history
+
+    plot_psychometric_curve(blocks, rewards, stimuli, actions)

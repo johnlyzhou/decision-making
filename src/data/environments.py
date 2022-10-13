@@ -1,5 +1,6 @@
 import abc
 import random
+from typing import List, Tuple
 
 import numpy as np
 from numpy import ndarray
@@ -25,7 +26,7 @@ class EnvironmentInterface(metaclass=abc.ABCMeta):
     """
     An abstract interface specifying the blueprint for task environment objects.
     """
-    def __init__(self, blocks) -> None:
+    def __init__(self, blocks: List[Tuple[str, float, int]]) -> None:
         self.done = False
         self.blocks = blocks
 
@@ -60,10 +61,38 @@ class EnvironmentInterface(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
+class RealEnvironment(metaclass=abc.ABCMeta):
+    """
+    An abstract interface specifying the blueprint for task environment objects.
+    """
+    def __init__(self, blocks: List[Tuple[str, float, int]], reward_history: List[int]) -> None:
+        self.done = False
+        self.blocks = blocks
+        self.end = True
+        self.reward_history = reward_history
+
+    def end(self) -> None:
+        raise NotImplementedError
+
+    def get_num_total_trials(self) -> int:
+        """Return total number of trials across all blocks."""
+        return sum(block[2] for block in self.blocks)
+
+    def step(self) -> None:
+        raise NotImplementedError
+
+    def reset(self) -> None:
+        """Reset environment to initial state."""
+        raise NotImplementedError
+
+    def sample_schedule(self) -> list:
+        raise NotImplementedError
+
+
 class BlockTask(EnvironmentInterface):
     """2AFC decision-making task with switching action rewards from Le et al. 2022."""
 
-    def __init__(self, blocks: list[tuple[str, float, int]]) -> None:
+    def __init__(self, blocks: List[Tuple[str, float, int]]) -> None:
         """
         :param blocks: list of tuples, where each tuple represents a block with format (boundary, reward_probability,
         num_trials).
@@ -135,7 +164,7 @@ class BlockTask(EnvironmentInterface):
 class BlockStimulusTask(EnvironmentInterface):
     """2AFC perceptual decision-making task with switching category boundaries from Liu, Xin, and Xu 2021."""
 
-    def __init__(self, blocks: list[tuple[str, float, int]], balance_mode: str = "reward") -> None:
+    def __init__(self, blocks: List[Tuple[str, float, int]], balance_mode: str = "reward") -> None:
         """
         :param blocks: list of tuples, where each tuple represents a block with format (boundary, reward_probability,
         num_trials).
@@ -206,7 +235,7 @@ class BlockStimulusTask(EnvironmentInterface):
         self.reward_history = []
         self.done = False
 
-    def sample_schedule(self) -> tuple[list[int], ndarray]:
+    def sample_schedule(self) -> Tuple[List[int], ndarray]:
         """
         Generate a schedule of trials for the current block, including the stimuli to be presented and the
         corresponding correct choices required to receive a reward.
@@ -251,7 +280,7 @@ class BlockStimulusTask(EnvironmentInterface):
         return stimuli_schedule, reward_schedule
 
 
-def validate_blocks(blocks: list[tuple[str, float, int]], task_type: str) -> bool:
+def validate_blocks(blocks: List[Tuple[str, float, int]], task_type: str) -> bool:
     """
     Ensure block parameters are in the correct format.
     :param task_type: string indicating for which task to validate blocks.
@@ -260,7 +289,7 @@ def validate_blocks(blocks: list[tuple[str, float, int]], task_type: str) -> boo
     :return: True if block parameters are in the correct format.
     """
     if not all([len(block) == 3 for block in blocks]):
-        raise ValueError("Block parameters should be formatted in a list of tuples (boundary, reward_probability, "
+        raise ValueError("Block parameters should be formatted in a list of (boundary, reward_probability, "
                          "num_trials).")
 
     for block in blocks:
@@ -281,7 +310,7 @@ def validate_blocks(blocks: list[tuple[str, float, int]], task_type: str) -> boo
     return True
 
 
-def get_stimuli_by_side(boundary: str) -> tuple[list[int], list[int]]:
+def get_stimuli_by_side(boundary: str) -> Tuple[List[int], List[int]]:
     left_stimuli_idxs = STIMULI_IDXS['LEFT'].copy()
     right_stimuli_idxs = STIMULI_IDXS['RIGHT'].copy()
 

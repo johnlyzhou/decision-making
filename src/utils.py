@@ -1,9 +1,11 @@
+from typing import List, Tuple
+
 import numpy as np
 from numpy import ndarray
 from omegaconf import OmegaConf, DictConfig
 
 
-def build_config(env: str, agent: str, num_blocks: int, trial_range: tuple[int, int], true_p_rew: float,
+def build_config(env: str, agent: str, num_blocks: int, trial_range: Tuple[int, int], true_p_rew: float,
                  pr_rew: float = None, pr_switch: float = None, lr: float = None, eps: float = None,
                  trans_probs: ndarray = None, save_path: str = None) -> DictConfig:
     blocks = []
@@ -29,7 +31,7 @@ def build_config(env: str, agent: str, num_blocks: int, trial_range: tuple[int, 
     return base_config
 
 
-def get_block_indices(blocks: list[tuple[str, float, int]]) -> list[tuple[int, int]]:
+def get_block_indices(blocks: List[Tuple[str, float, int]]) -> List[Tuple[int, int]]:
     """Return list of indices of the first and last trials of each block within all trials of the experiment."""
     indices = []
     trial_idx = 0
@@ -41,7 +43,7 @@ def get_block_indices(blocks: list[tuple[str, float, int]]) -> list[tuple[int, i
     return indices
 
 
-def blockify(blocks: list[tuple[str, float, int]], obs: list) -> list[list[int]]:
+def blockify(blocks: List[Tuple[str, float, int]], obs: list) -> List[List[int]]:
     """Partition a list of trial observations into a list of blocks of trial observations."""
     indices = get_block_indices(blocks)
     if sum([block[2] for block in blocks]) != len(obs):

@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 from numpy import ndarray
 
@@ -23,7 +25,7 @@ def sigmoid(x, eps: float, alpha: float, s: int) -> float:
     return 2 * (eps + (1 - 2 * eps) / (1 + np.exp(-alpha * (x - s)))) - 1
 
 
-def normalize_block_ala_le2022(action_block: list[int], side: str) -> list[int]:
+def normalize_block_ala_le2022(action_block: List[int], side: str) -> List[int]:
     """Switch block to make choice matching the hidden state of the trial 1 and the alternative -1."""
     if side == "LEFT":
         return [1 if action == 0 else -1 for action in action_block]
@@ -31,7 +33,7 @@ def normalize_block_ala_le2022(action_block: list[int], side: str) -> list[int]:
         return [1 if action == 1 else -1 for action in action_block]
 
 
-def pad_ragged_blocks(normalized_blocks: list[list[int]], max_len: int = 45) -> ndarray:
+def pad_ragged_blocks(normalized_blocks: List[List[int]], max_len: int = 45) -> ndarray:
     """Take the average choice across blocks of trials with varying lengths."""
     if not max_len:
         max_len = max([len(block) for block in normalized_blocks])
@@ -43,7 +45,7 @@ def pad_ragged_blocks(normalized_blocks: list[list[int]], max_len: int = 45) -> 
     return padded_blocks
 
 
-def average_blocks(normalized_blocks: list[list[int]], max_len: int = 45, mode: str = 'ragged') -> list[float]:
+def average_blocks(normalized_blocks: List[List[int]], max_len: int = 45, mode: str = 'ragged') -> List[float]:
     """Take the average choice across blocks of trials with varying lengths."""
     if not max_len:
         max_len = max([len(block) for block in normalized_blocks])

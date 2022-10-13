@@ -11,7 +11,7 @@ from src.data.experiments import Experiment
 from src.utils import get_block_indices
 
 
-def get_percent_left(actions: list[int], rewards: list[int], stimuli: list[int], num_stimuli: int,
+def get_percent_left(actions: List[int], rewards: List[int], stimuli: List[int], num_stimuli: int,
                      action_type: int = None, reward_type: int = None, stimulus_type: int = None) -> ndarray:
     """Compute the percentage of left choices in a 2AFC task for different stimulus values."""
     if action_type:
@@ -36,7 +36,7 @@ def get_percent_left(actions: list[int], rewards: list[int], stimuli: list[int],
     return num_left_actions / num_presentations
 
 
-def plot_psychometric_curve(blocks: list[tuple], rewards: list[int], stimuli: list[int], actions: list[int]) -> None:
+def plot_psychometric_curve(blocks: List[tuple], rewards: List[int], stimuli: List[int], actions: List[int]) -> None:
     """Plot a psychometric scatter plot."""
     block_percents = []
     fig = plt.figure()
@@ -52,7 +52,7 @@ def plot_psychometric_curve(blocks: list[tuple], rewards: list[int], stimuli: li
     plt.show()
 
 
-def get_switching_stimuli_outcomes(expt: Experiment, match: str = "rule") -> list[list[bool]]:
+def get_switching_stimuli_outcomes(expt: Experiment, match: str = "rule") -> List[List[bool]]:
     """
     Compute choice correctness for each trial with a presentation of a switching stimulus in a blockwise fashion.
     :param expt: Experiment object with completed results.
@@ -91,7 +91,7 @@ def get_switching_stimuli_outcomes(expt: Experiment, match: str = "rule") -> lis
     return switching_trials
 
 
-def plot_switching_stimuli_outcomes(switching_trials: list[list[int]]) -> None:
+def plot_switching_stimuli_outcomes(switching_trials: List[List[int]]) -> None:
     bounds = []
     plt.figure(figsize=(10, 1))
     for block in switching_trials:
@@ -106,7 +106,7 @@ def plot_switching_stimuli_outcomes(switching_trials: list[list[int]]) -> None:
     plt.show()
 
 
-def plot_switching_logistic_regression(switching_trials: list[list[int]]) -> None:
+def plot_switching_logistic_regression(switching_trials: List[List[int]]) -> None:
     for block in switching_trials:
         X = np.asarray(range(len(block)))
         X = X[:, np.newaxis]

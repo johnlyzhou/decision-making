@@ -1,5 +1,3 @@
-import argparse
-import itertools
 from typing import Union
 
 import numpy as np
@@ -9,10 +7,17 @@ from omegaconf.dictconfig import DictConfig
 from tqdm import tqdm
 
 from src.data.experiments import Experiment
+from src.data.real_datasets import DynamicForagingDataset
 from src.features.build_features import compute_foraging_efficiency
 from src.models.fit_curves import normalize_block_ala_le2022, average_blocks, sigmoid, driver_func, \
     pad_ragged_blocks
 from src.utils import blockify, build_config
+
+COLORMAP = ['blue', 'red', 'white']
+
+
+def real_sigmoid_fits(filename: str):
+    real_expt = DynamicForagingDataset(filename)
 
 
 def qlearning_sigmoid_fits(eps=0.1, lr=0.1, trial_bounds=(15, 25), true_pr_rew=1.0, num_blocks=100):
@@ -43,7 +48,7 @@ def qlearning_sigmoid_fits(eps=0.1, lr=0.1, trial_bounds=(15, 25), true_pr_rew=1
     plt.show()
 
 
-def inference_sigmoid_fits(pswitch=0.01, prew=0.55, trial_bounds=(15, 25), true_pr_rew=1.0, num_blocks=100):
+def inference_sigmoid_fits(pswitch=0.15666666666666668, prew=0.55, trial_bounds=(15, 25), true_pr_rew=1.0, num_blocks=100):
     config = build_config("BlockTask", "InferenceAgent", num_blocks, trial_bounds, true_pr_rew, pr_switch=pswitch,
                           pr_rew=prew)
     expt = Experiment(config)
@@ -68,6 +73,34 @@ def inference_sigmoid_fits(pswitch=0.01, prew=0.55, trial_bounds=(15, 25), true_
              label='fit: eps=%5.3f, k=%5.3f, x0=%5.3f' % tuple(params))
     plt.legend()
     plt.scatter(range(len(averaged_blocks)), averaged_blocks)
+    plt.show()
+
+
+def qlearning_bluered_run(lr=1.2, eps=0.2, trial_bounds=(15, 25), true_pr_rew=1.0, num_blocks=100):
+    config = build_config("BlockTask", "QLearningAgent", num_blocks, trial_bounds, true_pr_rew, lr=lr,
+                          eps=eps)
+    expt = Experiment(config)
+    expt.run()
+    actions = expt.agent.action_history
+    rewards = expt.environment.reward_history
+    E = compute_foraging_efficiency(actions, rewards)
+    blocked_actions = blockify(expt.blocks, actions)
+    blocks = expt.blocks
+    normalized_actions = [normalize_block_ala_le2022(blocked_actions[block_idx], blocks[block_idx][0])
+                          for block_idx in range(len(blocks))]
+    max_len = max([block[2] for block in blocks])
+    padded_blocks = pad_ragged_blocks(normalized_actions, max_len=max_len)
+
+    fig, ax = plt.subplots()
+    n_trials, n_blocks = padded_blocks.shape
+    ys, xs = np.meshgrid(range(n_trials), range(n_blocks))
+    c = ax.pcolormesh(ys, xs, padded_blocks.T, vmin=np.min(padded_blocks.T), vmax=np.max(padded_blocks.T), cmap='coolwarm_r')
+    # colors = ["white", "blue", "red"]
+    # for i in range(xs.size):
+    #     # print(padded_blocks.shape)
+    #     print(xs.shape)
+    #     # print(padded_blocks[ys[i], xs[i]])
+    #     plt.scatter(xs[i], ys[i], color=colors[1])
     plt.show()
 
 
@@ -140,7 +173,7 @@ def q_learning_grid_run(lr_bounds=(0.01, 1.4), eps_bounds=(0.01, 0.5), num_lrs=2
     np.save("/Users/johnzhou/research/decision-making/data/qlearning_sim_labels.npy", labels)
 
 
-def inference_grid_run(pswitch_bounds=(0.01, 0.45), prew_bounds=(0.55, 0.99), num_pswitches=15, num_prews=10,
+def inference_grid_run(pswitch_bounds=(0.01, 0.45), prew_bounds=(0.55, 0.99), num_pswitches=25, num_prews=20,
                        true_pr_rew=1.0, trial_bounds=(15, 25), num_blocks=1000):
     pswitches = np.linspace(pswitch_bounds[0], pswitch_bounds[1], num=num_pswitches)
     prews = np.linspace(prew_bounds[0], prew_bounds[1], num=num_prews)
@@ -231,7 +264,7 @@ def test_run(config: Union[str, DictConfig]) -> None:
 
 
 if __name__ == "__main__":
-    qlearning_sigmoid_fits()
+    real_sigmoid_fits("/Users/johnzhou/research/decision-making/data/DynamicForaging/MR15_DynamicForaging_20221006_125935.mat")
     # parser = argparse.ArgumentParser(description='Run a simulated 2AFC task and fit a state space model.')
     # parser.add_argument('config', help='A required path to experiment configuration file.')
     # args = parser.parse_args()

@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List
 
 import numpy as np
 from numpy import ndarray
@@ -18,7 +18,7 @@ def build_observations(*args: list) -> ndarray:
     return np.array(obs)
 
 
-def compute_foraging_efficiency(actions: Union[list[int], ndarray], rewards: Union[list[int], ndarray]) -> float:
+def compute_foraging_efficiency(actions: Union[List[int], ndarray], rewards: Union[List[int], ndarray]) -> float:
     """Compute percentage of trials correct across an entire experiment."""
     if type(actions) is list:
         actions = np.array(actions)

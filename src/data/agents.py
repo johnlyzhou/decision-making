@@ -31,6 +31,19 @@ class AgentInterface(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
+class RealAgent(AgentInterface):
+    """A model-free agent that uses Q-learning to update state-action values in response to received rewards."""
+    def __init__(self) -> None:
+        super().__init__()
+        self.action_history = []
+
+    def sample_action(self) -> None:
+        raise NotImplementedError
+
+    def update(self, action: int, reward: Union[int, bool], stimulus_idx: int = None) -> None:
+        raise NotImplementedError
+
+
 class QLearningAgent(AgentInterface):
     """A model-free agent that uses Q-learning to update state-action values in response to received rewards."""
     def __init__(self, learning_rate: float, epsilon: float, task: Type[EnvironmentInterface]) -> None:

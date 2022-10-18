@@ -22,7 +22,7 @@ class RealDataset(Dataset):
     def __len__(self) -> int:
         return len(self.data)
 
-    def __ingest_real_data(self) -> list[Tensor]:
+    def __ingest_real_data(self) -> List[Tensor]:
         real_expt = DynamicForagingData(self.data_file)
         blocks = convert_real_blocks(real_expt.block, real_expt.correct_side)
         actions = convert_real_actions(real_expt.response_side)

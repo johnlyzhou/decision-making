@@ -280,7 +280,7 @@ class BeliefStateAgent(AgentInterface):
 
 class SwitchingAgent(AgentInterface):
     """Agent that switches strategies according to a transition matrix."""
-    def __init__(self, transition_matrix: ndarray, agents: list[Type[AgentInterface]]) -> None:
+    def __init__(self, transition_matrix: ndarray, agents: List[Type[AgentInterface]]) -> None:
         """
         :param transition_matrix: matrix where each entry is the probability of transitioning from the agent indexed by
         the row to the agent indexed by the column.
@@ -322,7 +322,7 @@ class SwitchingAgent(AgentInterface):
 
 class BlockSwitchingAgent(AgentInterface):
     """Agent that switches strategies according to a transition matrix from block to block."""
-    def __init__(self, transition_matrix: ndarray, agents: list[Type[AgentInterface]]) -> None:
+    def __init__(self, transition_matrix: ndarray, agents: List[Type[AgentInterface]]) -> None:
         """
         :param transition_matrix: matrix where each entry is the probability of transitioning from the agent indexed by
         the row to the agent indexed by the column.
@@ -370,7 +370,7 @@ class BlockSwitchingAgent(AgentInterface):
 class RecurrentBlockSwitchingAgent(AgentInterface):
     """Agent that switches strategies (Q learning or belief state) according to a transition matrix and parameters
     of those strategies according to a continuous dynamics function."""
-    def __init__(self, transition_matrix: ndarray, agents: list[Type[AgentInterface]]) -> None:
+    def __init__(self, transition_matrix: ndarray, agents: List[Type[AgentInterface]]) -> None:
         """
         :param transition_matrix: matrix where each entry is the probability of transitioning from the agent indexed by
         the row to the agent indexed by the column.

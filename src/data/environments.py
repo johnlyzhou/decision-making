@@ -174,7 +174,7 @@ class SwitchingStimulusTask(EnvironmentInterface):
         self.done = False
 
     @property
-    def stimulus_history(self) -> list[int]:
+    def stimulus_history(self) -> List[int]:
         return self.__stimulus_history
 
     def get_current_stimulus(self) -> int:

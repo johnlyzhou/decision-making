@@ -1,6 +1,9 @@
+from typing import Tuple
+
 import numpy as np
 from pytorch_lightning import LightningModule
 import torch
+from torch import tensor
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data import TensorDataset
 
@@ -9,7 +12,7 @@ from src.models.losses import gaussian_nll, kl_divergence
 
 
 class BlockVAE(LightningModule):
-    def __init__(self, config: dict):
+    def __init__(self, config: dict) -> None:
         super().__init__()
         self.config = config
         self.save_hyperparameters(config)
@@ -22,46 +25,46 @@ class BlockVAE(LightningModule):
                               model_config["encoder_output_dim"],
                               model_config["conv_decoder_layers"],
                               use_batch_norm=model_config.get("use_batch_norm", True))
-        self.model = None
-        self.init_model(encoder, decoder, model_config)
-        self.train_dataset = None
-        self.val_dataset = None
+        self.model = self.init_model(encoder, decoder, model_config)
+        self.train_dataset, self.val_dataset = self.prepare_data()
 
-    def init_model(self, encoder, decoder, model_config: dict):
-        self.model = VAE(
+    @staticmethod
+    def init_model(encoder: ConvEncoder, decoder: ConvDecoder, model_config: dict) -> VAE:
+        return VAE(
             encoder,
             decoder,
             model_config["encoder_output_dim"],
             model_config["latent_dim"]
         )
 
-    def prepare_data(self):
+    def prepare_data(self) -> Tuple[TensorDataset, TensorDataset]:
         data_config = self.config["data"]
         train_templates = np.load(data_config["train_data_path"])
         val_templates = np.load(data_config["val_data_path"])
 
         x_train = torch.from_numpy(train_templates).float()
         x_val = torch.from_numpy(val_templates).float()
-        self.train_dataset = TensorDataset(x_train, x_train)
-        self.val_dataset = TensorDataset(x_val, x_val)
+        train_dataset = TensorDataset(x_train, x_train)
+        val_dataset = TensorDataset(x_val, x_val)
+        return train_dataset, val_dataset
 
-    def train_dataloader(self):
+    def train_dataloader(self) -> DataLoader:
         return DataLoader(
             self.train_dataset, batch_size=self.config["data"]["train_batch_size"])
 
-    def val_dataloader(self):
+    def val_dataloader(self) -> DataLoader:
         return DataLoader(
             self.val_dataset, batch_size=self.config["data"]["val_batch_size"])
 
-    def forward(self, x):
+    def forward(self, x: tensor) -> tensor:
         return self.model(x)
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> torch.optim.Adam:
         return torch.optim.Adam(
             self.parameters(), lr=(self.config["learning_rate"] or 1e-4))
 
     @staticmethod
-    def loss(batch, outputs):
+    def loss(batch: tensor, outputs: Tuple[tensor, tensor, tensor]) -> Tuple[float, float, float]:
         x, _ = batch
         mean, log_var, x_hat = outputs
 
@@ -75,7 +78,7 @@ class BlockVAE(LightningModule):
             kld.mean()
         )
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch: tensor, batch_idx: int) -> float:
         output = self.model(batch[0])
         elbo, reconstruction_loss, kld = self.loss(batch, output)
 
@@ -87,7 +90,7 @@ class BlockVAE(LightningModule):
 
         return elbo
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: tensor, batch_idx: int) -> float:
         output = self.model(batch[0])
         elbo, reconstruction_loss, kld = self.loss(batch, output)
 

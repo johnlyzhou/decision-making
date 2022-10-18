@@ -1,41 +1,50 @@
 import abc
 import copy
 import random
-from typing import Union, Type
+from typing import Union, Type, List
 
 import numpy as np
 from numpy import ndarray
 
-from src.data.environments import STIMULI_FREQS, ACTIONS, BOUNDARY_FREQS, BlockStimulusTask, BlockTask, \
-    EnvironmentInterface
+from src.data.environments import STIMULI_FREQS, ACTIONS, BOUNDARY_FREQS
+from src.data.environments import SwitchingStimulusTask, DynamicForagingTask, EnvironmentInterface
 from src.utils import validate_transition_matrix
 
 
 class AgentInterface(metaclass=abc.ABCMeta):
+    def __init__(self):
+        self.__action_history = []
+
     @classmethod
     def __subclasshook__(cls, subclass):
-        return (hasattr(subclass, 'sample_action') and
+        return (hasattr(subclass, 'action_history') and
+                callable(subclass.action_history) and
+                hasattr(subclass, 'sample_action') and
                 callable(subclass.sample_action) and
                 hasattr(subclass, 'update') and
                 callable(subclass.update) or
                 NotImplemented)
 
+    @property
+    def action_history(self):
+        return self.__action_history
+
     @abc.abstractmethod
     def sample_action(self, **kwargs) -> int:
-        """Sample an action for the agent to take in the current trial."""
+        """In the current trial, sample the agent's choice of action."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def update(self, action: int, reward: Union[int, bool], **kwargs) -> None:
-        """Update agent's internal parameters based on the trial's outcome."""
+        """Update agent's internal parameters based on the current trial's outcome."""
         raise NotImplementedError
 
 
-class RealAgent(AgentInterface):
-    """A model-free agent that uses Q-learning to update state-action values in response to received rewards."""
-    def __init__(self) -> None:
+class UnknownAgent(AgentInterface):
+    """Dummy class to allow real data to work with agent-based functions."""
+    def __init__(self, action_history: List[int]) -> None:
         super().__init__()
-        self.action_history = []
+        self.__action_history = action_history
 
     def sample_action(self) -> None:
         raise NotImplementedError
@@ -48,22 +57,25 @@ class QLearningAgent(AgentInterface):
     """A model-free agent that uses Q-learning to update state-action values in response to received rewards."""
     def __init__(self, learning_rate: float, epsilon: float, task: Type[EnvironmentInterface]) -> None:
         """
-        :param learning_rate: weight on the update of the current reward prediction error.
-        :param epsilon: probability of the agent taking an exploratory action.
-        :param task: type of task agent is doing.
+        :param learning_rate: weight on the reward prediction error update.
+        :param epsilon: probability of the agent taking a random action.
+        :param task: task the agent is doing.
         """
         super().__init__()
         self.task = task
         self.learning_rate = learning_rate
         self.epsilon = epsilon
-        self.action_history = []
 
-        if task is BlockStimulusTask:
-            self.stimulus_action_values = [np.ones(len(ACTIONS)) / len(ACTIONS) for _ in range(len(STIMULI_FREQS))]
-            self.stimulus_action_value_history = []
-        elif task is BlockTask:
+        if task is SwitchingStimulusTask:
+            self.action_values = [np.ones(len(ACTIONS)) / len(ACTIONS) for _ in range(len(STIMULI_FREQS))]
+        elif task is DynamicForagingTask:
             self.action_values = np.ones(len(ACTIONS)) / len(ACTIONS)
-            self.action_value_history = []
+
+        self.__action_value_history = []
+
+    @property
+    def action_value_history(self):
+        return self.__action_value_history
 
     def sample_action(self, stimulus_idx: int = None) -> int:
         """
@@ -75,14 +87,14 @@ class QLearningAgent(AgentInterface):
         if explore:
             action = np.random.randint(0, high=len(ACTIONS))
         else:
-            if self.task is BlockStimulusTask:
-                action = np.argmax(self.stimulus_action_values[stimulus_idx])
-            elif self.task is BlockTask:
+            if self.task is SwitchingStimulusTask:
+                action = np.argmax(self.action_values[stimulus_idx])
+            elif self.task is DynamicForagingTask:
                 action = np.argmax(self.action_values)
             else:
                 raise NotImplementedError
 
-        self.action_history.append(action)
+        self.__action_history.append(action)
         return action
 
     def update(self, action: int, reward: Union[int, bool], stimulus_idx: int = None) -> None:
@@ -92,103 +104,111 @@ class QLearningAgent(AgentInterface):
         :param action: representing index of the selected action.
         :param reward: boolean or int indicating whether reward was received for the trial.
         """
-        if self.task is BlockStimulusTask:
-            self.stimulus_action_values[stimulus_idx][action] += self.learning_rate * (
-                    reward - self.stimulus_action_values[stimulus_idx][action]
+        if self.task is SwitchingStimulusTask:
+            self.action_values[stimulus_idx][action] += self.learning_rate * (
+                    reward - self.action_values[stimulus_idx][action]
             )
-            self.stimulus_action_values[stimulus_idx] /= sum(self.stimulus_action_values[stimulus_idx])
-            self.stimulus_action_value_history.append(copy.deepcopy(self.stimulus_action_values))
-        elif self.task is BlockTask:
+            self.action_values[stimulus_idx] /= sum(self.action_values[stimulus_idx])
+            self.__action_value_history.append(copy.deepcopy(self.action_values))
+        elif self.task is DynamicForagingTask:
             self.action_values[action] += self.learning_rate * (reward - self.action_values[action])
-            # self.action_values /= np.sum(self.action_values)
-            self.action_value_history.append(self.action_values.copy())
+            self.__action_value_history.append(self.action_values.copy())
         else:
             raise NotImplementedError
 
 
 class InferenceAgent(AgentInterface):
     """A model-based agent that tracks the action side that produces a reward."""
-    def __init__(self, p_reward: float, p_switch: float, task: Type[EnvironmentInterface]) -> None:
+    def __init__(self, p_reward: float, p_switch: float) -> None:
         """
         :param p_reward: agent's belief of the probability it will receive a reward if it takes the correct action.
         :param p_switch: agent's belief of the probability that the side has switched.
         """
         super().__init__()
-        self.task = task
-        if self.task is not BlockTask:
-            raise ValueError("The InferenceAgent is designed for the BlockTask only!")
-        self.p_reward = p_reward
-        self.p_switch = p_switch
-        self.side_beliefs = np.array([0.5, 0.5])
-        self.action_history = []
-        self.side_belief_history = []
+        self.__p_reward = p_reward
+        self.__p_switch = p_switch
+        self.__side_beliefs = np.array([0.5, 0.5])
+        self.__side_belief_history = []
+
+    @property
+    def p_reward(self):
+        return self.__p_reward
+
+    @property
+    def p_switch(self):
+        return self.__p_switch
+
+    @property
+    def side_belief_history(self):
+        return self.__side_belief_history
 
     def sample_action(self) -> int:
-        if self.side_beliefs[0] > 0.5:
+        if self.__side_beliefs[0] > 0.5:
             action = ACTIONS["LEFT"]
-        elif self.side_beliefs[1] > 0.5:
+        elif self.__side_beliefs[1] > 0.5:
             action = ACTIONS["RIGHT"]
         else:
             if np.random.random() < 0.5:
                 action = ACTIONS["LEFT"]
             else:
                 action = ACTIONS["RIGHT"]
-        self.action_history.append(action)
+        self.__action_history.append(action)
         return action
 
     def update(self, action: int, reward: Union[int, bool], stimulus_idx: int = None) -> None:
         pr_l = 0
         pr_r = 0
-        for side_idx in range(len(self.side_beliefs)):
-            prior = self.side_beliefs[side_idx]
+        for side_idx in range(len(self.__side_beliefs)):
+            prior = self.__side_beliefs[side_idx]
 
             if action == side_idx:
                 if reward:
-                    expected_reward_prob = self.p_reward
+                    expected_reward_prob = self.__p_reward
                 else:
-                    expected_reward_prob = 1 - self.p_reward
+                    expected_reward_prob = 1 - self.__p_reward
             else:
                 if reward:
-                    expected_reward_prob = 1 - self.p_reward
+                    expected_reward_prob = 1 - self.__p_reward
                 else:
-                    expected_reward_prob = self.p_reward
+                    expected_reward_prob = self.__p_reward
 
             if side_idx == 0:
-                l_trans_probs = 1 - self.p_switch
-                r_trans_probs = self.p_switch
+                l_trans_probs = 1 - self.__p_switch
+                r_trans_probs = self.__p_switch
             else:
-                l_trans_probs = self.p_switch
-                r_trans_probs = 1 - self.p_switch
+                l_trans_probs = self.__p_switch
+                r_trans_probs = 1 - self.__p_switch
             pr_l += prior * expected_reward_prob * l_trans_probs
             pr_r += prior * expected_reward_prob * r_trans_probs
-        self.side_beliefs = np.array([pr_l, pr_r]) / (pr_l + pr_r)
-        self.side_belief_history.append(self.side_beliefs)
+        self.__side_beliefs = np.array([pr_l, pr_r]) / (pr_l + pr_r)
+        self.__side_belief_history.append(self.__side_beliefs)
 
 
 class BeliefStateAgent(AgentInterface):
     """A model-based agent that tracks the location of the boundary separating left and right stimuli."""
-    def __init__(self, p_reward: float, p_switch: float, task: Type[EnvironmentInterface]) -> None:
+    def __init__(self, p_reward: float, p_switch: float) -> None:
         """
-        :param p_reward: agent's belief of the probability it will receive a reward if it takes the correct action.
-        :param p_switch: agent's belief of the probability that the boundary has switched.
+        :param p_reward: what the agent thinks is the probability of receiving a reward for the correct action.
+        :param p_switch: what the agent thinks is the probability that the boundary will switch on any given trial.
         """
         super().__init__()
-        if task is not BlockStimulusTask:
-            raise ValueError("The BeliefStateAgent is designed for the BlockStimulusTask only!")
-        self.low_boundary_idx = 0
-        self.high_boundary_idx = 1
-        self.boundary_beliefs = np.array([0.5, 0.5])
+        self.low_boundary_idx, self.high_boundary_idx = 0, 1
+
         self.reward_probability = p_reward
-        self.reward_distribution = None
-        self.initialize_reward_distribution()
         self.switch_probability = p_switch
+        self.boundary_beliefs = np.array([0.5, 0.5])
+        self.__boundary_belief_history = []
+
+        self.reward_distribution = self._initialize_reward_distribution()
         self.reward = None
         self.perceived_stimulus = None
         self.choice = None
-        self.action_history = []
-        self.boundary_belief_history = []
 
-    def initialize_reward_distribution(self) -> None:
+    @property
+    def boundary_belief_history(self):
+        return self.__boundary_belief_history
+
+    def _initialize_reward_distribution(self) -> ndarray:
         """Initialize the belief distribution over rewards given an action, presented stimulus, and boundary belief."""
         left = ACTIONS['LEFT']
         right = ACTIONS['RIGHT']
@@ -205,7 +225,7 @@ class BeliefStateAgent(AgentInterface):
                 else:
                     reward_distribution[left, stimulus_idx, boundary_idx] = 1 - self.reward_probability
                     reward_distribution[right, stimulus_idx, boundary_idx] = self.reward_probability
-        self.reward_distribution = reward_distribution
+        return reward_distribution
 
     def sample_action(self, stimulus_idx: int = None) -> int:
         """
@@ -223,7 +243,7 @@ class BeliefStateAgent(AgentInterface):
         else:
             action = ACTIONS['RIGHT']
 
-        self.action_history.append(action)
+        self.__action_history.append(action)
         self.choice = action
         return action
 
@@ -255,28 +275,29 @@ class BeliefStateAgent(AgentInterface):
                 new_boundary_beliefs[current_boundary_belief] += prior * reward_prob * trans_probs
         new_boundary_beliefs /= sum(new_boundary_beliefs)
         self.boundary_beliefs = new_boundary_beliefs
-        self.boundary_belief_history.append(new_boundary_beliefs)
+        self.__boundary_belief_history.append(new_boundary_beliefs)
 
 
 class SwitchingAgent(AgentInterface):
     """Agent that switches strategies according to a transition matrix."""
-    def __init__(self, transition_matrix: ndarray,
-                 agents: list,
-                 task: Type[EnvironmentInterface]) -> None:
+    def __init__(self, transition_matrix: ndarray, agents: list[Type[AgentInterface]]) -> None:
         """
-        :param transition_matrix: symmetrical numpy matrix where each entry is the probability of transitioning from the
-        agent indexed by the row to the agent indexed by the column. Elements in range [0, 1] and rows should sum to 1.
-        :param agents: list of Agent objects.
+        :param transition_matrix: matrix where each entry is the probability of transitioning from the agent indexed by
+        the row to the agent indexed by the column.
+        :param agents: different strategies (Agent Objects) between which the agent can switch.
         """
         super().__init__()
         validate_transition_matrix(transition_matrix)
         self.transition_matrix = transition_matrix
         self.agents = agents
-        self.current_agent_idx = 0
         if self.transition_matrix.shape[0] != len(self.agents) or self.transition_matrix.shape[1] != len(self.agents):
             raise ValueError("Transition matrix shape should match number of agents!")
-        self.action_history = []
-        self.state_history = []
+        self.current_agent_idx = 0
+        self.__state_history = []
+
+    @property
+    def state_history(self):
+        return self.__state_history
 
     def sample_action(self, stimulus_idx: int = None) -> int:
         """
@@ -285,12 +306,14 @@ class SwitchingAgent(AgentInterface):
         :return: index of the selected action.
         """
         action = self.agents[self.current_agent_idx].sample_action(stimulus_idx)
-        self.action_history.append(action)
+        self.__action_history.append(action)
         return action
 
     def update(self, action: int, reward: Union[int, bool], stimulus_idx: int = None) -> None:
-        self.state_history.append(self.current_agent_idx)
-        """All strategies are updated for each trial."""
+        """
+        Update every agent for each trial.
+        """
+        self.__state_history.append(self.current_agent_idx)
         for agent in self.agents:
             agent.update(action, reward, stimulus_idx=stimulus_idx)
         transition_probs = list(self.transition_matrix[self.current_agent_idx, :])
@@ -299,13 +322,11 @@ class SwitchingAgent(AgentInterface):
 
 class BlockSwitchingAgent(AgentInterface):
     """Agent that switches strategies according to a transition matrix from block to block."""
-    def __init__(self, transition_matrix: ndarray,
-                 agents: list,
-                 task: Type[EnvironmentInterface]) -> None:
+    def __init__(self, transition_matrix: ndarray, agents: list[Type[AgentInterface]]) -> None:
         """
-        :param transition_matrix: symmetrical matrix where each entry is the probability of transitioning from the
-        strategy indexed by the row to the strategy indexed by the column.
-        :param agents: different strategies that the agent can switch between.
+        :param transition_matrix: matrix where each entry is the probability of transitioning from the agent indexed by
+        the row to the agent indexed by the column.
+        :param agents: different strategies (Agent Objects) between which the agent can switch.
         """
         super().__init__()
         validate_transition_matrix(transition_matrix)
@@ -314,7 +335,7 @@ class BlockSwitchingAgent(AgentInterface):
         self.current_agent_idx = 0
         if self.transition_matrix.shape[0] != len(self.agents) or self.transition_matrix.shape[1] != len(self.agents):
             raise ValueError("Transition matrix shape should match number of agents!")
-        self.action_history = []
+        self.__action_history = []
         self.state_history = []
 
     def sample_action(self, stimulus_idx: int = None) -> int:
@@ -324,7 +345,7 @@ class BlockSwitchingAgent(AgentInterface):
         :return: int representing index of the selected action.
         """
         action = self.agents[self.current_agent_idx].sample_action(stimulus_idx=stimulus_idx)
-        self.action_history.append(action)
+        self.__action_history.append(action)
         return action
 
     def update(self, action: int,
@@ -349,7 +370,12 @@ class BlockSwitchingAgent(AgentInterface):
 class RecurrentBlockSwitchingAgent(AgentInterface):
     """Agent that switches strategies (Q learning or belief state) according to a transition matrix and parameters
     of those strategies according to a continuous dynamics function."""
-    def __init__(self, transition_matrix: ndarray, task: Type[EnvironmentInterface]) -> None:
+    def __init__(self, transition_matrix: ndarray, agents: list[Type[AgentInterface]]) -> None:
+        """
+        :param transition_matrix: matrix where each entry is the probability of transitioning from the agent indexed by
+        the row to the agent indexed by the column.
+        :param agents: different strategies (Agent Objects) between which the agent can switch.
+        """
         super().__init__()
         validate_transition_matrix(transition_matrix)
         self.transition_matrix = transition_matrix

@@ -1,6 +1,6 @@
 import abc
 import random
-from typing import List, Tuple
+from typing import List, Tuple, Any
 
 import numpy as np
 from numpy import ndarray
@@ -27,22 +27,28 @@ class EnvironmentInterface(metaclass=abc.ABCMeta):
     An abstract interface specifying the blueprint for task environment objects.
     """
     def __init__(self, blocks: List[Tuple[str, float, int]]) -> None:
+        self.real = False
         self.done = False
         self.blocks = blocks
+        self.__reward_history = []
 
     @classmethod
     def __subclasshook__(cls, subclass):
-        return (hasattr(subclass, 'sample_action') and
-                callable(subclass.sample_action) and
-                hasattr(subclass, 'update') and
-                callable(subclass.update) or
+        return (hasattr(subclass, 'step') and
+                callable(subclass.step) and
+                hasattr(subclass, 'sample_schedule') and
+                callable(subclass.sample_schedule) or
                 NotImplemented)
+
+    @property
+    def reward_history(self):
+        return self.__reward_history
 
     def end(self) -> None:
         """Set ending flag for environment after all trials in all blocks have finished."""
         self.done = True
 
-    def get_num_total_trials(self) -> int:
+    def __len__(self) -> int:
         """Return total number of trials across all blocks."""
         return sum(block[2] for block in self.blocks)
 
@@ -52,68 +58,42 @@ class EnvironmentInterface(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def reset(self) -> None:
-        """Reset environment to initial state."""
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def sample_schedule(self) -> list:
         raise NotImplementedError
 
 
-class RealEnvironment(metaclass=abc.ABCMeta):
-    """
-    An abstract interface specifying the blueprint for task environment objects.
-    """
-    def __init__(self, blocks: List[Tuple[str, float, int]], reward_history: List[int]) -> None:
-        self.done = False
-        self.blocks = blocks
-        self.end = True
-        self.reward_history = reward_history
-
-    def end(self) -> None:
-        raise NotImplementedError
-
-    def get_num_total_trials(self) -> int:
-        """Return total number of trials across all blocks."""
-        return sum(block[2] for block in self.blocks)
-
-    def step(self) -> None:
-        raise NotImplementedError
-
-    def reset(self) -> None:
-        """Reset environment to initial state."""
-        raise NotImplementedError
-
-    def sample_schedule(self) -> list:
-        raise NotImplementedError
-
-
-class BlockTask(EnvironmentInterface):
+class DynamicForagingTask(EnvironmentInterface):
     """2AFC decision-making task with switching action rewards from Le et al. 2022."""
 
-    def __init__(self, blocks: List[Tuple[str, float, int]]) -> None:
+    def __init__(self, blocks: List[Tuple[str, float, int]], reward_history: List[int] = None) -> None:
         """
         :param blocks: list of tuples, where each tuple represents a block with format (boundary, reward_probability,
         num_trials).
         """
         super().__init__(blocks)
-        validate_blocks(self.blocks, "BlockTask")
+        validate_blocks(self.blocks, DynamicForagingTask)
 
-        self.current_block_idx = 0
-        self.current_trial_idx = -1
-        self.block_reward_schedule = None
-        self.reward_history = []
+        if reward_history:
+            self.real = True
+            self.__reward_history = reward_history
+        else:
+            self.current_block_idx = 0
+            self.current_trial_idx = -1
+            self.block_reward_schedule = None
 
     def get_current_rewarded_action(self) -> int:
         """Return correct choice to receive a reward (not necessarily the one received by the agent)."""
+        if self.real:
+            raise NotImplementedError
         return self.block_reward_schedule[self.current_trial_idx]
 
     def step(self) -> None:
         """Step through one trial of the experiment."""
+        if self.real:
+            raise NotImplementedError
+
         num_trials_in_block = self.blocks[self.current_block_idx][2]
 
-        # Check if environment is finished.
         if self.done is True:
             print("Environment has finished running! Check value of ProposalTaskObject.done to exit any loops.")
             return
@@ -131,18 +111,9 @@ class BlockTask(EnvironmentInterface):
         # Check if we're starting a new block: if so, generate new trial schedule.
         if self.current_trial_idx == -1:
             self.block_reward_schedule = self.sample_schedule()
-            self.reward_history += list(self.block_reward_schedule)
+            self.__reward_history += list(self.block_reward_schedule)
 
         self.current_trial_idx += 1
-
-    def reset(self) -> None:
-        """Reset environment to initial state."""
-        self.current_block_idx = 0
-        self.current_trial_idx = -1
-        self.block_reward_schedule = None
-        self.reward_history = []
-
-        self.done = False
 
     def sample_schedule(self) -> list:
         """
@@ -151,6 +122,9 @@ class BlockTask(EnvironmentInterface):
         :return: two lists of ints of length equal to the number of trials in the block, the first containing indices of
         stimuli presented, the second containing which action will be rewarded, in {0, 1} with 0: left and 1: right.
         """
+        if self.real:
+            raise NotImplementedError
+
         side, pr_reward, num_trials = self.blocks[self.current_block_idx]
         if side == "LEFT":
             weights = [pr_reward, 1 - pr_reward]
@@ -161,44 +135,67 @@ class BlockTask(EnvironmentInterface):
         return block_reward_schedule
 
 
-class BlockStimulusTask(EnvironmentInterface):
+class SwitchingStimulusTask(EnvironmentInterface):
     """2AFC perceptual decision-making task with switching category boundaries from Liu, Xin, and Xu 2021."""
 
-    def __init__(self, blocks: List[Tuple[str, float, int]], balance_mode: str = "reward") -> None:
+    def __init__(self,
+                 blocks: List[Tuple[str, float, int]],
+                 balance_mode: str = "reward",
+                 reward_history: List[int] = None,
+                 stimulus_history: List[int] = None) -> None:
         """
         :param blocks: list of tuples, where each tuple represents a block with format (boundary, reward_probability,
         num_trials).
         :param balance_mode: string indicating how probabilities of stimulus appearances should be balanced.
         """
         super().__init__(blocks)
-        validate_blocks(self.blocks, "BlockStimulusTask")
-        self.balance_mode = balance_mode
+        validate_blocks(self.blocks, SwitchingStimulusTask)
 
-        self.current_block_idx = 0
-        self.current_trial_idx = -1
-        self.block_stimulus_schedule = None
-        self.block_reward_schedule = None
+        if reward_history and stimulus_history:
+            self.real = True
+            self.__reward_history = reward_history
+            self.__stimulus_history = stimulus_history
+        else:
+            self.balance_mode = balance_mode
 
-        self.stimulus_idx_history = []
-        self.stimulus_history = []
-        self.reward_history = []
-        self.boundary_history = []
+            self.current_block_idx = 0
+            self.current_trial_idx = -1
+            self.block_stimulus_schedule = None
+            self.block_reward_schedule = None
 
-        for block in blocks:
+            self.stimulus_idx_history = []
+            self.__stimulus_history = []
+            self.__reward_history = []
+            self.boundary_history = []
+
+        for block in self.blocks:
             self.boundary_history += [block[0] for _ in range(block[2])]
 
         self.done = False
 
+    @property
+    def stimulus_history(self) -> list[int]:
+        return self.__stimulus_history
+
     def get_current_stimulus(self) -> int:
         """Return stimulus presented during current trial."""
+        if self.real:
+            raise NotImplementedError
+
         return self.block_stimulus_schedule[self.current_trial_idx]
 
     def get_current_rewarded_action(self) -> int:
         """Return correct choice to receive a reward (not necessarily the one received by the agent)."""
+        if self.real:
+            raise NotImplementedError
+
         return self.block_reward_schedule[self.current_trial_idx]
 
     def step(self) -> None:
         """Step through one trial of the experiment."""
+        if self.real:
+            raise NotImplementedError
+
         num_trials_in_block = self.blocks[self.current_block_idx][2]
 
         # Check if environment is finished.
@@ -220,20 +217,10 @@ class BlockStimulusTask(EnvironmentInterface):
         if self.current_trial_idx == -1:
             self.block_stimulus_schedule, self.block_reward_schedule = self.sample_schedule()
             self.stimulus_idx_history += list(self.block_stimulus_schedule)
-            self.reward_history += list(self.block_reward_schedule)
-            self.stimulus_history += [STIMULI_FREQS[stim_idx] for stim_idx in list(self.block_stimulus_schedule)]
+            self.__reward_history += list(self.block_reward_schedule)
+            self.__stimulus_history += [STIMULI_FREQS[stim_idx] for stim_idx in list(self.block_stimulus_schedule)]
 
         self.current_trial_idx += 1
-
-    def reset(self) -> None:
-        """Reset environment to initial state."""
-        self.current_block_idx = 0
-        self.block_stimulus_schedule = None
-        self.block_reward_schedule = None
-        self.current_trial_idx = -1
-        self.stimulus_idx_history = []
-        self.reward_history = []
-        self.done = False
 
     def sample_schedule(self) -> Tuple[List[int], ndarray]:
         """
@@ -242,9 +229,12 @@ class BlockStimulusTask(EnvironmentInterface):
         :return: two lists of ints of length equal to the number of trials in the block, the first containing indices of
         stimuli presented, the second containing which action will be rewarded, in {0, 1} with 0: left and 1: right.
         """
+        if self.real:
+            raise NotImplementedError
+
         boundary, pr_reward, num_trials = self.blocks[self.current_block_idx]
 
-        left_stimuli_idxs, right_stimuli_idxs = get_stimuli_by_side(boundary)
+        left_stimuli_idxs, right_stimuli_idxs = _get_stimuli_by_side(boundary)
         num_left_stimuli = len(left_stimuli_idxs)
         num_right_stimuli = len(right_stimuli_idxs)
 
@@ -280,7 +270,7 @@ class BlockStimulusTask(EnvironmentInterface):
         return stimuli_schedule, reward_schedule
 
 
-def validate_blocks(blocks: List[Tuple[str, float, int]], task_type: str) -> bool:
+def validate_blocks(blocks: List[Tuple[str, float, int]], task_type: Any) -> bool:
     """
     Ensure block parameters are in the correct format.
     :param task_type: string indicating for which task to validate blocks.
@@ -293,11 +283,11 @@ def validate_blocks(blocks: List[Tuple[str, float, int]], task_type: str) -> boo
                          "num_trials).")
 
     for block in blocks:
-        if task_type == "BlockStimulusTask":
+        if task_type == SwitchingStimulusTask:
             boundary, reward_prob, num_trials = block
             if boundary not in BOUNDARY_IDX:
                 raise ValueError(f"Boundaries should match one of {BOUNDARY_IDX.keys()}!")
-        elif task_type == "BlockTask":
+        elif task_type == DynamicForagingTask:
             side, reward_prob, num_trials = block
             if side not in SIDE:
                 raise ValueError(f"Sides should match one of {SIDE.keys()}!")
@@ -310,7 +300,7 @@ def validate_blocks(blocks: List[Tuple[str, float, int]], task_type: str) -> boo
     return True
 
 
-def get_stimuli_by_side(boundary: str) -> Tuple[List[int], List[int]]:
+def _get_stimuli_by_side(boundary: str) -> Tuple[List[int], List[int]]:
     left_stimuli_idxs = STIMULI_IDXS['LEFT'].copy()
     right_stimuli_idxs = STIMULI_IDXS['RIGHT'].copy()
 

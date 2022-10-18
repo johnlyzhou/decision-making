@@ -4,7 +4,7 @@ import numpy as np
 from numpy import ndarray
 
 
-def build_observations(*args: list) -> ndarray:
+def build_ssm_observations(*args: list) -> ndarray:
     """
     Takes in lists of observations and reshapes them into the correct observation format for the SSM library.
     :param args: lists of observation values of length n (corresponding to trials, blocks, etc.).
@@ -25,3 +25,24 @@ def compute_foraging_efficiency(actions: Union[List[int], ndarray], rewards: Uni
     if type(rewards) is list:
         rewards = np.array(rewards)
     return np.sum((actions == rewards)) / len(actions)
+
+
+def driver_func(params, X, y) -> ndarray:
+    """
+    Sigmoid curve with additional epsilon "lapse" parameter.
+    """
+    yhat = sigmoid(X, *params)
+    loss = np.sum((yhat - y) ** 2)
+    return loss
+
+
+def sigmoid(x, eps: float, alpha: float, s: int) -> float:
+    """
+    Sigmoid curve with additional epsilon "lapse" parameter.
+    :param eps: float in range [0, 1], epsilon exploration parameter, influences maximum value.
+    :param alpha: logistic growth rate indicating steepness of the curve.
+    :param x: int indicating trial index, where the first trial after the block switch has index 0.
+    :param s: trial index at curve's midpoint.
+    :return: float in range [0, 1] indicating some percentage.
+    """
+    return eps + (1 - 2 * eps) / (1 + np.exp(-alpha * (x - s)))

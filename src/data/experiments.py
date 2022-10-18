@@ -69,7 +69,7 @@ class SynthExperiment(ExperimentInterface):
 
     def run(self) -> None:
         """Run an agent through an environment."""
-        for ep in range(self.environment.get_num_total_trials() + 1):
+        for ep in range(len(self.environment) + 1):
             self.environment.step()
             if self.environment.done:
                 self.__done = True

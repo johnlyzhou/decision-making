@@ -1,4 +1,5 @@
 import itertools
+from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,7 +8,7 @@ from scipy.special import expit
 from sklearn.linear_model import LogisticRegression
 
 from src.data.environments import STIMULI_FREQS, STIMULI_IDXS
-from src.data.experiments import Experiment
+from src.data.experiments import SynthExperiment
 from src.utils import get_block_indices
 
 
@@ -52,7 +53,7 @@ def plot_psychometric_curve(blocks: List[tuple], rewards: List[int], stimuli: Li
     plt.show()
 
 
-def get_switching_stimuli_outcomes(expt: Experiment, match: str = "rule") -> List[List[bool]]:
+def get_switching_stimuli_outcomes(expt: SynthExperiment, match: str = "rule") -> List[List[bool]]:
     """
     Compute choice correctness for each trial with a presentation of a switching stimulus in a blockwise fashion.
     :param expt: Experiment object with completed results.
@@ -128,7 +129,7 @@ def plot_switching_logistic_regression(switching_trials: List[List[int]]) -> Non
         plt.show()
 
 
-def plot_psychometric_scatter(expt: Experiment) -> None:
+def plot_psychometric_scatter(expt: SynthExperiment) -> None:
     """Plot psychometric scatter for experiment."""
 
     if not expt.environment.done:

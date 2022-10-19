@@ -3,6 +3,7 @@ from typing import Tuple
 import numpy as np
 from pytorch_lightning import LightningModule
 import torch
+from sklearn.model_selection import train_test_split
 from torch import tensor
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data import TensorDataset
@@ -18,6 +19,7 @@ class BlockVAE(LightningModule):
         self.save_hyperparameters(config)
 
         model_config = config["model"]
+        print(model_config)
         encoder = ConvEncoder(model_config["in_channels"],
                               model_config["conv_encoder_layers"],
                               use_batch_norm=model_config.get("use_batch_norm", True))
@@ -39,13 +41,15 @@ class BlockVAE(LightningModule):
 
     def prepare_data(self) -> Tuple[TensorDataset, TensorDataset]:
         data_config = self.config["data"]
-        train_templates = np.load(data_config["train_data_path"])
-        val_templates = np.load(data_config["val_data_path"])
+        X = np.load(data_config["feature_path"])
+        y = np.load(data_config["label_path"])
+        train_prop = data_config["train_proportion"]
 
-        x_train = torch.from_numpy(train_templates).float()
-        x_val = torch.from_numpy(val_templates).float()
-        train_dataset = TensorDataset(x_train, x_train)
-        val_dataset = TensorDataset(x_val, x_val)
+        X_train, X_val = train_test_split(X, train_size=train_prop, random_state=99, shuffle=True, stratify=y)
+        X_train = torch.unsqueeze(torch.from_numpy(X_train).float(), 1)
+        X_val = torch.unsqueeze(torch.from_numpy(X_val).float(), 1)
+        train_dataset = TensorDataset(X_train)
+        val_dataset = TensorDataset(X_val)
         return train_dataset, val_dataset
 
     def train_dataloader(self) -> DataLoader:
@@ -65,7 +69,7 @@ class BlockVAE(LightningModule):
 
     @staticmethod
     def loss(batch: tensor, outputs: Tuple[tensor, tensor, tensor]) -> Tuple[float, float, float]:
-        x, _ = batch
+        x = batch[0]
         mean, log_var, x_hat = outputs
 
         reconstruction_loss = gaussian_nll(x, x_hat)

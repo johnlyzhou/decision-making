@@ -39,7 +39,7 @@ class SynthDataset(Dataset):
         self.data = [torch.tensor(sample) for sample in list(np.load(data_file).T)]
         self.labels = list(np.load(label_file).T)
 
-    def __getitem__(self, idx: int) -> tuple[Tensor, Any]:
+    def __getitem__(self, idx: int) -> Tuple[Tensor, Any]:
         return self.data[idx], self.labels[idx]
 
     def __len__(self) -> int:

@@ -1,0 +1,42 @@
+name: test_expt
+random_seed: 4995
+model:
+  in_channels: 1
+  conv_encoder_layers:
+  - - 16
+    - 3
+    - 2
+  - - 8
+    - 3
+    - 2
+  - - 4
+    - 1
+    - 1
+  conv_decoder_layers:
+  - - 8
+    - 3
+    - 2
+    - 0
+  - - 4
+    - 2
+    - 1
+    - 0
+  - - 1
+    - 1
+    - 2
+    - 0
+  encoder_output_dim:
+  - 4
+  - 3
+  latent_dim: 6
+  use_batch_norm: true
+learning_rate: 0.0001
+data:
+  feature_path: /Users/johnzhou/research/decision-making/data/synth/sim_features.npy
+  label_path: /Users/johnzhou/research/decision-making/data/synth/sim_labels.npy
+  train_proportion: 0.8
+  train_batch_size: 100
+  val_batch_size: 100
+trainer:
+  gpus: 0
+  max_epochs: 100

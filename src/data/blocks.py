@@ -5,9 +5,8 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset
 
-from src.data.real_data import DynamicForagingData, normalize_block_side, convert_real_blocks, \
-    convert_real_actions
-from src.utils import blockify
+from src.data.real_data import DynamicForagingData
+from src.utils import blockify, normalize_block_side, convert_real_blocks, convert_real_actions
 
 
 class RealDataset(Dataset):

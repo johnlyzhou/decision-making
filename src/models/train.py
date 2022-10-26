@@ -28,7 +28,6 @@ def train(system_class,
             EarlyStopping(monitor="val_loss", patience=3),
             TQDMProgressBar(refresh_rate=20)
         ],
-        logger=None
     )
     trainer.fit(system)
     return system, trainer

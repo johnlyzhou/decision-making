@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union, List, Tuple
 
 import numpy as np
 from numpy import ndarray
@@ -27,6 +27,22 @@ def compute_foraging_efficiency(actions: Union[List[int], ndarray], rewards: Uni
     return np.sum((actions == rewards)) / len(actions)
 
 
+def sigmoid_initial_guess(y: List[float]) -> ndarray:
+    """
+    Guess initial parameters for sigmoid fitting.
+    :param y: trial-averaged decision values for each timestep of the trial
+    :return: set of initial parameters
+    """
+    s = 14
+    for i in range(len(y) - 1):
+        if y[i] > 0.5:
+            s = i
+            break
+    eps = 0.2
+    a = 5
+    return np.array([eps, a, s])
+
+
 def driver_func(params, X, y) -> ndarray:
     """
     Sigmoid curve with additional epsilon "lapse" parameter.
@@ -36,13 +52,13 @@ def driver_func(params, X, y) -> ndarray:
     return loss
 
 
-def sigmoid(x, eps: float, alpha: float, s: int) -> float:
+def sigmoid(X: ndarray, eps: float, alpha: float, s: int) -> ndarray:
     """
     Sigmoid curve with additional epsilon "lapse" parameter.
     :param eps: float in range [0, 1], epsilon exploration parameter, influences maximum value.
     :param alpha: logistic growth rate indicating steepness of the curve.
-    :param x: int indicating trial index, where the first trial after the block switch has index 0.
+    :param X: int indicating trial index, where the first trial after the block switch has index 0.
     :param s: trial index at curve's midpoint.
     :return: float in range [0, 1] indicating some percentage.
     """
-    return eps + (1 - 2 * eps) / (1 + np.exp(-alpha * (x - s)))
+    return np.float64(eps + (1 - 2 * eps) / (1 + np.exp(-alpha * (X - s))))

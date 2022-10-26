@@ -12,9 +12,6 @@ from src.utils import validate_transition_matrix
 
 
 class AgentInterface(metaclass=abc.ABCMeta):
-    def __init__(self):
-        self.__action_history = []
-
     @classmethod
     def __subclasshook__(cls, subclass):
         return (hasattr(subclass, 'action_history') and
@@ -24,10 +21,6 @@ class AgentInterface(metaclass=abc.ABCMeta):
                 hasattr(subclass, 'update') and
                 callable(subclass.update) or
                 NotImplemented)
-
-    @property
-    def action_history(self):
-        return self.__action_history
 
     @abc.abstractmethod
     def sample_action(self, **kwargs) -> int:
@@ -45,6 +38,10 @@ class UnknownAgent(AgentInterface):
     def __init__(self, action_history: List[int]) -> None:
         super().__init__()
         self.__action_history = action_history
+
+    @property
+    def action_history(self):
+        return self.__action_history
 
     def sample_action(self) -> None:
         raise NotImplementedError
@@ -70,8 +67,12 @@ class QLearningAgent(AgentInterface):
             self.action_values = [np.ones(len(ACTIONS)) / len(ACTIONS) for _ in range(len(STIMULI_FREQS))]
         elif task is DynamicForagingTask:
             self.action_values = np.ones(len(ACTIONS)) / len(ACTIONS)
-
+        self.__action_history = []
         self.__action_value_history = []
+
+    @property
+    def action_history(self):
+        return self.__action_history
 
     @property
     def action_value_history(self):
@@ -93,7 +94,6 @@ class QLearningAgent(AgentInterface):
                 action = np.argmax(self.action_values)
             else:
                 raise NotImplementedError
-
         self.__action_history.append(action)
         return action
 
@@ -129,6 +129,11 @@ class InferenceAgent(AgentInterface):
         self.__p_switch = p_switch
         self.__side_beliefs = np.array([0.5, 0.5])
         self.__side_belief_history = []
+        self.__action_history = []
+
+    @property
+    def action_history(self):
+        return self.__action_history
 
     @property
     def p_reward(self):
@@ -198,11 +203,16 @@ class BeliefStateAgent(AgentInterface):
         self.switch_probability = p_switch
         self.boundary_beliefs = np.array([0.5, 0.5])
         self.__boundary_belief_history = []
+        self.__action_history = []
 
         self.reward_distribution = self._initialize_reward_distribution()
         self.reward = None
         self.perceived_stimulus = None
         self.choice = None
+
+    @property
+    def action_history(self):
+        return self.__action_history
 
     @property
     def boundary_belief_history(self):
@@ -294,6 +304,11 @@ class SwitchingAgent(AgentInterface):
             raise ValueError("Transition matrix shape should match number of agents!")
         self.current_agent_idx = 0
         self.__state_history = []
+        self.__action_history = []
+
+    @property
+    def action_history(self):
+        return self.__action_history
 
     @property
     def state_history(self):
@@ -338,6 +353,10 @@ class BlockSwitchingAgent(AgentInterface):
         self.__action_history = []
         self.state_history = []
 
+    @property
+    def action_history(self):
+        return self.__action_history
+
     def sample_action(self, stimulus_idx: int = None) -> int:
         """
         Sample an action according to a noisy stimulus perception and belief over current boundary location.
@@ -379,7 +398,12 @@ class RecurrentBlockSwitchingAgent(AgentInterface):
         super().__init__()
         validate_transition_matrix(transition_matrix)
         self.transition_matrix = transition_matrix
+        self.__action_history = []
         raise NotImplementedError
+
+    @property
+    def action_history(self):
+        return self.__action_history
 
     def sample_action(self, stimulus_idx: int = None) -> int:
         raise NotImplementedError

@@ -7,11 +7,11 @@ from torch import nn, tensor
 
 
 class ConvEncoder(nn.Module):
-    def __init__(self, in_channels: int, conv_encoder_layers: Tuple[int], use_batch_norm: bool = False) -> None:
+    def __init__(self, in_channels: int, conv_encoder_layers: List[Tuple[int]], use_batch_norm: bool = False) -> None:
         super().__init__()
 
         layers = []
-        
+
         for (out_channels, kernel, stride) in conv_encoder_layers:
             layers.append(nn.Conv1d(in_channels, out_channels, kernel, stride=stride))
             if use_batch_norm:
@@ -28,7 +28,7 @@ class ConvEncoder(nn.Module):
 class ConvDecoder(nn.Module):
     def __init__(self, in_features: int,
                  encoder_output_dim: Tuple[int],
-                 conv_decoder_layers: List[Tuple],
+                 conv_decoder_layers: List[Tuple[int]],
                  use_batch_norm: bool = False
                  ) -> None:
         super().__init__()

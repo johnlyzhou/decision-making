@@ -30,7 +30,6 @@ class EnvironmentInterface(metaclass=abc.ABCMeta):
         self.real = False
         self.done = False
         self.blocks = blocks
-        self.__reward_history = []
 
     @classmethod
     def __subclasshook__(cls, subclass):
@@ -39,10 +38,6 @@ class EnvironmentInterface(metaclass=abc.ABCMeta):
                 hasattr(subclass, 'sample_schedule') and
                 callable(subclass.sample_schedule) or
                 NotImplemented)
-
-    @property
-    def reward_history(self):
-        return self.__reward_history
 
     def end(self) -> None:
         """Set ending flag for environment after all trials in all blocks have finished."""
@@ -72,14 +67,20 @@ class DynamicForagingTask(EnvironmentInterface):
         """
         super().__init__(blocks)
         validate_blocks(self.blocks, DynamicForagingTask)
+        self.__reward_history = []
 
-        if reward_history:
+        if reward_history is not None:
             self.real = True
             self.__reward_history = reward_history
         else:
+            self.__reward_history = []
             self.current_block_idx = 0
             self.current_trial_idx = -1
             self.block_reward_schedule = None
+
+    @property
+    def reward_history(self):
+        return self.__reward_history
 
     def get_current_rewarded_action(self) -> int:
         """Return correct choice to receive a reward (not necessarily the one received by the agent)."""
@@ -150,6 +151,7 @@ class SwitchingStimulusTask(EnvironmentInterface):
         """
         super().__init__(blocks)
         validate_blocks(self.blocks, SwitchingStimulusTask)
+        self.__reward_history = []
 
         if reward_history and stimulus_history:
             self.real = True
@@ -172,6 +174,10 @@ class SwitchingStimulusTask(EnvironmentInterface):
             self.boundary_history += [block[0] for _ in range(block[2])]
 
         self.done = False
+
+    @property
+    def reward_history(self):
+        return self.__reward_history
 
     @property
     def stimulus_history(self) -> List[int]:
@@ -293,6 +299,7 @@ def validate_blocks(blocks: List[Tuple[str, float, int]], task_type: Any) -> boo
                 raise ValueError(f"Sides should match one of {SIDE.keys()}!")
         else:
             raise NotImplementedError("Task not implemented! Choose one of \'BlockTask\' or \'BlockStimulusTask\'.")
+
         if reward_prob < 0 or reward_prob > 1.0:
             raise ValueError("Reward probability should be between 0 and 1!")
         if type(num_trials) != int or num_trials < 0:

@@ -39,8 +39,11 @@ class UnknownAgent(AgentInterface):
         super().__init__()
         self.__action_history = action_history
 
+    def __str__(self) -> str:
+        return "UnknownAgent"
+
     @property
-    def action_history(self):
+    def action_history(self) -> List[int]:
         return self.__action_history
 
     def sample_action(self) -> None:
@@ -48,6 +51,31 @@ class UnknownAgent(AgentInterface):
 
     def update(self, action: int, reward: Union[int, bool], stimulus_idx: int = None) -> None:
         raise NotImplementedError
+
+
+class BiasedAgent(AgentInterface):
+    """A biased agent that always picks a specified side."""
+    def __init__(self, side: int) -> None:
+        super().__init__()
+        if side not in [0, 1]:
+            raise ValueError
+        self.side = side
+        self.__action_history = []
+
+    def __str__(self) -> str:
+        return "BiasedAgent"
+
+    @property
+    def action_history(self) -> List[int]:
+        return self.__action_history
+
+    def sample_action(self, stimulus_idx: int = None) -> int:
+        action = self.side
+        self.__action_history.append(action)
+        return action
+
+    def update(self, action: int, reward: Union[int, bool], stimulus_idx: int = None) -> None:
+        pass
 
 
 class QLearningAgent(AgentInterface):
@@ -70,12 +98,15 @@ class QLearningAgent(AgentInterface):
         self.__action_history = []
         self.__action_value_history = []
 
+    def __str__(self) -> str:
+        return "QLearningAgent"
+
     @property
-    def action_history(self):
+    def action_history(self) -> List[int]:
         return self.__action_history
 
     @property
-    def action_value_history(self):
+    def action_value_history(self) -> List[float]:
         return self.__action_value_history
 
     def sample_action(self, stimulus_idx: int = None) -> int:
@@ -130,6 +161,9 @@ class InferenceAgent(AgentInterface):
         self.__side_beliefs = np.array([0.5, 0.5])
         self.__side_belief_history = []
         self.__action_history = []
+
+    def __str__(self) -> str:
+        return "InferenceAgent"
 
     @property
     def action_history(self):
@@ -209,6 +243,9 @@ class BeliefStateAgent(AgentInterface):
         self.reward = None
         self.perceived_stimulus = None
         self.choice = None
+
+    def __str__(self) -> str:
+        return "BeliefStateAgent"
 
     @property
     def action_history(self):
@@ -306,6 +343,9 @@ class SwitchingAgent(AgentInterface):
         self.__state_history = []
         self.__action_history = []
 
+    def __str__(self) -> str:
+        return "SwitchingAgent"
+
     @property
     def action_history(self):
         return self.__action_history
@@ -352,6 +392,9 @@ class BlockSwitchingAgent(AgentInterface):
             raise ValueError("Transition matrix shape should match number of agents!")
         self.__action_history = []
         self.state_history = []
+
+    def __str__(self) -> str:
+        return "BlockSwitchingAgent"
 
     @property
     def action_history(self):
@@ -400,6 +443,9 @@ class RecurrentBlockSwitchingAgent(AgentInterface):
         self.transition_matrix = transition_matrix
         self.__action_history = []
         raise NotImplementedError
+
+    def __str__(self) -> str:
+        return "RecurrentBlockSwitchingAgent"
 
     @property
     def action_history(self):

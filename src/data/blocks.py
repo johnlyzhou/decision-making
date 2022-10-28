@@ -6,7 +6,7 @@ from torch import Tensor
 from torch.utils.data import Dataset
 
 from src.data.real_data import DynamicForagingData
-from src.utils import blockify, normalize_block_side, convert_real_blocks, convert_real_actions
+from src.utils import blockify, normalize_block_side, generate_real_block_params, convert_real_actions
 
 
 class RealDataset(Dataset):
@@ -23,7 +23,7 @@ class RealDataset(Dataset):
 
     def __ingest_real_data(self) -> List[Tensor]:
         real_expt = DynamicForagingData(self.data_file)
-        blocks = convert_real_blocks(real_expt.block, real_expt.correct_side)
+        blocks = generate_real_block_params(real_expt.block, real_expt.correct_side)
         actions = convert_real_actions(real_expt.response_side)
         blocked_actions = blockify(blocks, actions)
         normalized_actions = [torch.tensor(normalize_block_side(blocked_actions[block_idx], blocks[block_idx][0]

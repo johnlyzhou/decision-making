@@ -36,6 +36,10 @@ class ExperimentInterface(metaclass=abc.ABCMeta):
 
 class RealExperiment(ExperimentInterface):
     def __init__(self, filename: str = None, task_type: Type[EnvironmentInterface] = None):
+        """
+        :param filename: Path to MATLAB file generated from a real experiment.
+        :param task_type: Type of task.
+        """
         super().__init__()
         self.__done = True
         self.task_type = task_type
@@ -57,13 +61,10 @@ class RealExperiment(ExperimentInterface):
 
 
 class SynthExperiment(ExperimentInterface):
-    """
-    Sets up a task environment and agent(s) and runs a synthetic experiment based on configuration settings.
-    """
-
+    """Sets up a task environment and agent(s) and runs a synthetic experiment based on configuration settings."""
     def __init__(self, config: Union[str, DictConfig] = None) -> None:
         """
-        :param config: string containing path to config file or a dictionary config.
+        :param config: Path to config file or a dictionary config.
         """
         super().__init__()
         if type(config) == str:

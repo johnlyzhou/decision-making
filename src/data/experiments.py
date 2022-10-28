@@ -9,7 +9,7 @@ from src.data.agents import QLearningAgent, BeliefStateAgent, SwitchingAgent, Bl
     UnknownAgent
 from src.data.environments import SwitchingStimulusTask, DynamicForagingTask, EnvironmentInterface
 from src.data.real_data import DynamicForagingData
-from src.utils import convert_real_blocks, convert_real_actions
+from src.utils import generate_real_block_params, convert_real_actions
 
 
 class ExperimentInterface(metaclass=abc.ABCMeta):
@@ -41,7 +41,7 @@ class RealExperiment(ExperimentInterface):
         self.task_type = task_type
         if self.task_type is DynamicForagingTask:
             self.data = DynamicForagingData(filename)
-            self.blocks = convert_real_blocks(self.data.block, self.data.correct_side)
+            self.blocks = generate_real_block_params(self.data.block, self.data.correct_side)
             self.action_history = convert_real_actions(self.data.response_side)
             self.reward_history = self.data.rewarded
             self.environment = DynamicForagingTask(self.blocks, self.reward_history)

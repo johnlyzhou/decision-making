@@ -16,6 +16,9 @@ class ExperimentInterface(metaclass=abc.ABCMeta):
     def __init__(self):
         self.__done = False
 
+    def __str__(self) -> str:
+        raise NotImplementedError
+
     @property
     def done(self):
         return self.__done
@@ -46,6 +49,9 @@ class RealExperiment(ExperimentInterface):
         else:
             raise NotImplementedError
 
+    def __str__(self) -> str:
+        return "RealExperiment"
+
     def run(self):
         raise NotImplementedError
 
@@ -68,6 +74,9 @@ class SynthExperiment(ExperimentInterface):
         self.task_type, self.blocks, self.environment = self.__init_environment()
         self.agent = self.__init_agent()
 
+    def __str__(self) -> str:
+        return "SynthExperiment"
+
     def run(self) -> None:
         """Run an agent through an environment."""
         for ep in range(len(self.environment) + 1):
@@ -75,7 +84,12 @@ class SynthExperiment(ExperimentInterface):
             if self.environment.done:
                 self.__done = True
                 break
-            if self.task_type == SwitchingStimulusTask:
+            if self.task_type == DynamicForagingTask:
+                agent_action = self.agent.sample_action()
+                correct_action = self.environment.get_current_rewarded_action()
+                reward = (agent_action == correct_action)
+                self.agent.update(agent_action, reward)
+            elif self.task_type == SwitchingStimulusTask:
                 stimuli = self.environment.get_current_stimulus()
                 agent_action = self.agent.sample_action(stimuli)
                 correct_action = self.environment.get_current_rewarded_action()
@@ -84,11 +98,6 @@ class SynthExperiment(ExperimentInterface):
                     self.agent.update(agent_action, reward, stimuli, block_switch=True)
                 else:
                     self.agent.update(agent_action, reward, stimuli)
-            elif self.task_type == DynamicForagingTask:
-                agent_action = self.agent.sample_action()
-                correct_action = self.environment.get_current_rewarded_action()
-                reward = (agent_action == correct_action)
-                self.agent.update(agent_action, reward)
             else:
                 raise NotImplementedError
 

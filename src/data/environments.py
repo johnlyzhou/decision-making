@@ -31,6 +31,9 @@ class EnvironmentInterface(metaclass=abc.ABCMeta):
         self.done = False
         self.blocks = blocks
 
+    def __str__(self) -> str:
+        raise NotImplementedError
+
     @classmethod
     def __subclasshook__(cls, subclass):
         return (hasattr(subclass, 'step') and
@@ -77,6 +80,9 @@ class DynamicForagingTask(EnvironmentInterface):
             self.current_block_idx = 0
             self.current_trial_idx = -1
             self.block_reward_schedule = None
+
+    def __str__(self) -> str:
+        return "DynamicForagingTask"
 
     @property
     def reward_history(self):
@@ -174,6 +180,9 @@ class SwitchingStimulusTask(EnvironmentInterface):
             self.boundary_history += [block[0] for _ in range(block[2])]
 
         self.done = False
+
+    def __str__(self) -> str:
+        return "SwitchingStimulusTask"
 
     @property
     def reward_history(self):

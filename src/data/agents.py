@@ -82,9 +82,9 @@ class QLearningAgent(AgentInterface):
     """A model-free agent that uses Q-learning to update state-action values in response to received rewards."""
     def __init__(self, learning_rate: float, epsilon: float, task: Type[EnvironmentInterface]) -> None:
         """
-        :param learning_rate: weight on the reward prediction error update.
-        :param epsilon: probability of the agent taking a random action.
-        :param task: task the agent is doing.
+        :param learning_rate: Weight on the reward prediction error update.
+        :param epsilon: Probability of the agent taking a random action.
+        :param task: Type of task.
         """
         super().__init__()
         self.task = task
@@ -112,8 +112,8 @@ class QLearningAgent(AgentInterface):
     def sample_action(self, stimulus_idx: int = None) -> int:
         """
         Sample an action for the agent to take in the current trial according to an epsilon-greedy policy.
-        :param stimulus_idx: index of stimulus, referencing the imported STIMULI_FREQS list.
-        :return: index of the selected action.
+        :param stimulus_idx: Index of stimulus, referencing the imported STIMULI_FREQS list.
+        :return: Index of the selected action.
         """
         explore = np.random.random() < self.epsilon
         if explore:
@@ -131,9 +131,9 @@ class QLearningAgent(AgentInterface):
     def update(self, action: int, reward: Union[int, bool], stimulus_idx: int = None) -> None:
         """
         Update state-action values based on the trial's outcome.
-        :param stimulus_idx: index of stimulus, references the imported STIMULI_FREQS list.
-        :param action: representing index of the selected action.
-        :param reward: boolean or int indicating whether reward was received for the trial.
+        :param stimulus_idx: Index of stimulus, references the imported STIMULI_FREQS list.
+        :param action: Representing index of the selected action.
+        :param reward: Boolean or int indicating whether reward was received for the trial.
         """
         if self.task is SwitchingStimulusTask:
             self.action_values[stimulus_idx][action] += self.learning_rate * (
@@ -152,8 +152,8 @@ class InferenceAgent(AgentInterface):
     """A model-based agent that tracks the action side that produces a reward."""
     def __init__(self, p_reward: float, p_switch: float) -> None:
         """
-        :param p_reward: agent's belief of the probability it will receive a reward if it takes the correct action.
-        :param p_switch: agent's belief of the probability that the side has switched.
+        :param p_reward: What the agent thinks is the probability of receiving a reward for the correct action.
+        :param p_switch: What the agent thinks is the probability that the boundary will switch on any given trial.
         """
         super().__init__()
         self.__p_reward = p_reward
@@ -227,8 +227,8 @@ class BeliefStateAgent(AgentInterface):
     """A model-based agent that tracks the location of the boundary separating left and right stimuli."""
     def __init__(self, p_reward: float, p_switch: float) -> None:
         """
-        :param p_reward: what the agent thinks is the probability of receiving a reward for the correct action.
-        :param p_switch: what the agent thinks is the probability that the boundary will switch on any given trial.
+        :param p_reward: What the agent thinks is the probability of receiving a reward for the correct action.
+        :param p_switch: What the agent thinks is the probability that the boundary will switch on any given trial.
         """
         super().__init__()
         self.low_boundary_idx, self.high_boundary_idx = 0, 1
@@ -277,8 +277,8 @@ class BeliefStateAgent(AgentInterface):
     def sample_action(self, stimulus_idx: int = None) -> int:
         """
         Sample an action according to a noisy stimulus perception and belief over current boundary location.
-        :param stimulus_idx: int indicating index of stimulus, references the imported STIMULI_FREQS list.
-        :return: int representing index of the selected action.
+        :param stimulus_idx: Index of stimulus, references the imported STIMULI_FREQS list.
+        :return: Index of the selected action.
         """
         stimulus = STIMULI_FREQS[stimulus_idx]
         self.perceived_stimulus = stimulus + np.random.normal(scale=1.0)
@@ -297,9 +297,9 @@ class BeliefStateAgent(AgentInterface):
     def update(self, action: int, reward: Union[int, bool], stimulus_idx: int = None) -> None:
         """
         Recursively update beliefs over boundary location based on last trial's outcome.
-        :param stimulus_idx: int indicating index of stimulus, references the imported STIMULI_FREQS list.
-        :param action: int representing index of the selected action.
-        :param reward: boolean or int in {0, 1} indicating whether reward was received for the trial.
+        :param stimulus_idx: Index of stimulus, references the imported STIMULI_FREQS list.
+        :param action: Index of the selected action.
+        :param reward: Indicates whether reward was received for the trial.
         """
         low_boundary_idx = 0
         high_boundary_idx = 1
@@ -329,9 +329,9 @@ class SwitchingAgent(AgentInterface):
     """Agent that switches strategies according to a transition matrix."""
     def __init__(self, transition_matrix: ndarray, agents: List[Type[AgentInterface]]) -> None:
         """
-        :param transition_matrix: matrix where each entry is the probability of transitioning from the agent indexed by
+        :param transition_matrix: Matrix where each entry is the probability of transitioning from the agent indexed by
         the row to the agent indexed by the column.
-        :param agents: different strategies (Agent Objects) between which the agent can switch.
+        :param agents: Different strategies (Agent objects) between which the agent can switch.
         """
         super().__init__()
         validate_transition_matrix(transition_matrix)
@@ -357,17 +357,15 @@ class SwitchingAgent(AgentInterface):
     def sample_action(self, stimulus_idx: int = None) -> int:
         """
         Sample an action according to a noisy stimulus perception and belief over current boundary location.
-        :param stimulus_idx: index of stimulus, references the imported STIMULI_FREQS list.
-        :return: index of the selected action.
+        :param stimulus_idx: Index of stimulus, references the imported STIMULI_FREQS list.
+        :return: Index of the selected action.
         """
         action = self.agents[self.current_agent_idx].sample_action(stimulus_idx)
         self.__action_history.append(action)
         return action
 
     def update(self, action: int, reward: Union[int, bool], stimulus_idx: int = None) -> None:
-        """
-        Update every agent for each trial.
-        """
+        """Update every agent for each trial."""
         self.__state_history.append(self.current_agent_idx)
         for agent in self.agents:
             agent.update(action, reward, stimulus_idx=stimulus_idx)
@@ -379,9 +377,9 @@ class BlockSwitchingAgent(AgentInterface):
     """Agent that switches strategies according to a transition matrix from block to block."""
     def __init__(self, transition_matrix: ndarray, agents: List[Type[AgentInterface]]) -> None:
         """
-        :param transition_matrix: matrix where each entry is the probability of transitioning from the agent indexed by
+        :param transition_matrix: Matrix where each entry is the probability of transitioning from the agent indexed by
         the row to the agent indexed by the column.
-        :param agents: different strategies (Agent Objects) between which the agent can switch.
+        :param agents: Different strategies (Agent objects) between which the agent can switch.
         """
         super().__init__()
         validate_transition_matrix(transition_matrix)
@@ -403,8 +401,8 @@ class BlockSwitchingAgent(AgentInterface):
     def sample_action(self, stimulus_idx: int = None) -> int:
         """
         Sample an action according to a noisy stimulus perception and belief over current boundary location.
-        :param stimulus_idx: int indicating index of stimulus, references the imported STIMULI_FREQS list.
-        :return: int representing index of the selected action.
+        :param stimulus_idx: Index of stimulus, references the imported STIMULI_FREQS list.
+        :return: Index of the selected action.
         """
         action = self.agents[self.current_agent_idx].sample_action(stimulus_idx=stimulus_idx)
         self.__action_history.append(action)
@@ -416,10 +414,10 @@ class BlockSwitchingAgent(AgentInterface):
                block_switch: bool = False) -> None:
         """
         All strategies are updated for each trial, but transitions between strategies only happen between blocks.
-        :param stimulus_idx: int indicating index of stimulus, references the imported STIMULI_FREQS list.
-        :param action: int representing index of the selected action.
-        :param reward: boolean or int indicating whether reward was received for the trial (takes value 0 or 1).
-        :param block_switch: boolean indicating whether or not there is a block transition.
+        :param stimulus_idx: Index of stimulus, references the imported STIMULI_FREQS list.
+        :param action: Index of the selected action.
+        :param reward: Whether reward was received for the trial (takes value 0 or 1).
+        :param block_switch: Whether or not there is a block transition.
         """
         for agent in self.agents:
             agent.update(action, reward, stimulus_idx=stimulus_idx)
@@ -434,9 +432,9 @@ class RecurrentBlockSwitchingAgent(AgentInterface):
     of those strategies according to a continuous dynamics function."""
     def __init__(self, transition_matrix: ndarray, agents: List[Type[AgentInterface]]) -> None:
         """
-        :param transition_matrix: matrix where each entry is the probability of transitioning from the agent indexed by
+        :param transition_matrix: Matrix where each entry is the probability of transitioning from the agent indexed by
         the row to the agent indexed by the column.
-        :param agents: different strategies (Agent Objects) between which the agent can switch.
+        :param agents: Different strategies (Agent objects) between which the agent can switch.
         """
         super().__init__()
         validate_transition_matrix(transition_matrix)

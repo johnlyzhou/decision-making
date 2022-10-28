@@ -8,8 +8,7 @@ import numpy as np
 from src.data.agents import QLearningAgent, BeliefStateAgent, SwitchingAgent, BlockSwitchingAgent, InferenceAgent, \
     UnknownAgent
 from src.data.environments import SwitchingStimulusTask, DynamicForagingTask, EnvironmentInterface
-from src.data.real_data import DynamicForagingData
-from src.utils import generate_real_block_params, convert_real_actions
+from src.data.real_data import DynamicForagingData, generate_real_block_params, convert_real_actions
 
 
 class ExperimentInterface(metaclass=abc.ABCMeta):

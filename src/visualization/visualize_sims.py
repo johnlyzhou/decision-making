@@ -6,8 +6,8 @@ from matplotlib import pyplot as plt, colors
 
 from src.data.generate_synth_data import INITIAL_GUESS, SIGMOID_PARAM_BOUNDS
 from src.data.experiments import SynthExperiment
-from src.features.build_features import driver_func, sigmoid
-from src.utils import build_config, blockify, normalize_block_side, average_blocks, pad_ragged_blocks
+from src.features.build_features import sigmoid_mse, sigmoid
+from src.utils import build_config, blockify, normalize_block_side, average_choice_blocks, pad_ragged_blocks
 
 
 def plot_block_sigmoid(eps: float = 0.1,
@@ -18,9 +18,9 @@ def plot_block_sigmoid(eps: float = 0.1,
                        true_pr_rew: float = 1.0,
                        num_blocks: int = 100) -> None:
     """
-    Fit and plot a sigmoid curve to the average results of num_blocks trials of a Q-learning agent.
-    :param eps: epsilon parameter for Q-learning agent.
-    :param lr: learning rate parameter for Q-learning agent.
+    Fit and plot a sigmoid curve to the average choices of num_blocks trials of an agent.
+    :param eps: Epsilon parameter for Q-learning agent.
+    :param lr: Learning rate parameter for Q-learning agent.
     :param pswitch: P_switch parameter for inference agent.
     :param prew: P_reward parameter for inference agent.
     :param trial_bounds: Range of num_trials in the block.
@@ -45,11 +45,11 @@ def plot_block_sigmoid(eps: float = 0.1,
     normalized_actions = [normalize_block_side(blocked_actions[block_idx], blocks[block_idx][0])
                           for block_idx in range(len(blocks))]
     max_len = max([block[2] for block in blocks])
-    averaged_blocks = average_blocks(normalized_actions, max_len=max_len, mode="truncate")
+    averaged_blocks = average_choice_blocks(normalized_actions, max_len=max_len, mode="truncate")
 
     x_obs = range(len(averaged_blocks))
     y_obs = averaged_blocks
-    params = scipy.optimize.minimize(driver_func, INITIAL_GUESS, method="Nelder-Mead", args=(x_obs, y_obs),
+    params = scipy.optimize.minimize(sigmoid_mse, INITIAL_GUESS, method="Nelder-Mead", args=(x_obs, y_obs),
                                      bounds=SIGMOID_PARAM_BOUNDS).x
     plt.plot(np.linspace(0, len(averaged_blocks), num=1000),
              sigmoid(np.linspace(0, len(averaged_blocks), num=1000), *params), 'r-',
@@ -67,7 +67,7 @@ def plot_behavior_simulation(eps: float = 0.1,
                              true_pr_rew: float = 1.0,
                              num_blocks: int = 100) -> None:
     """
-    Plot correct and incorrect choices across all blocks.
+    Plot correct and incorrect choices across all blocks, corresponds to Figure 3c,d in Le et al. 2022.
     :param eps: epsilon parameter for Q-learning agent.
     :param lr: learning rate parameter for Q-learning agent.
     :param pswitch: P_switch parameter for inference agent.

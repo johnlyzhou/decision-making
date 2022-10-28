@@ -5,9 +5,18 @@ from numpy import ndarray
 from omegaconf import OmegaConf, DictConfig
 
 
-def build_config(env: str, agent: str, num_blocks: int, trial_range: Tuple[int, int], true_p_rew: float,
-                 pr_rew: float = None, pr_switch: float = None, lr: float = None, eps: float = None,
-                 trans_probs: ndarray = None, save_path: str = None) -> DictConfig:
+def build_config(env: str,
+                 agent: str,
+                 num_blocks: int,
+                 trial_range: Tuple[int, int],
+                 true_p_rew: float,
+                 lr: float = None,
+                 eps: float = None,
+                 pr_switch: float = None,
+                 pr_rew: float = None,
+                 trans_probs: ndarray = None,
+                 save_path: str = None) -> DictConfig:
+    """Builds a config file for running an experiment, with an option to save."""
     blocks = []
     sides = ["LEFT", "RIGHT"]
     for idx in range(num_blocks):
@@ -52,10 +61,7 @@ def blockify(blocks: List[Tuple[str, float, int]], obs: list) -> List[List[int]]
 
 
 def validate_transition_matrix(transition_matrix: ndarray) -> None:
-    """
-    Ensure that transition matrix is correctly formatted.
-    :param transition_matrix: symmetrical 2D numpy array containing transition probabilities between strategies/agents.
-    """
+    """Ensure that transition matrix is correctly formatted."""
     if len(transition_matrix.shape) != 2:
         raise ValueError("Transition matrix should be 2D!")
     if transition_matrix.shape[0] != transition_matrix.shape[1]:
@@ -65,18 +71,19 @@ def validate_transition_matrix(transition_matrix: ndarray) -> None:
             raise ValueError("Rows of transition probabilities should sum to 1!")
 
 
-def normalize_block_side(action_block: List[int], side: str, wrong_val: int = 0) -> List[int]:
-    """Switch block to make choice matching the hidden state of the trial 1 and the alternative -1."""
+def normalize_choice_block_side(choice_block: List[int], side: str, wrong_val: int = 0) -> List[int]:
+    """Normalize choice block info to assign the correct choice 1 matching side and the alternative wrong_val. As of
+    now, this also labels NaN (no choice) trials as incorrect pending future plans."""
     if wrong_val == 0:
         if side == "LEFT":
-            return [int(action == 0) for action in action_block]
+            return [int(choice == 0) for choice in choice_block]
         else:
-            return [int(action == 1) for action in action_block]
+            return [int(choice == 1) for choice in choice_block]
     else:
         if side == "LEFT":
-            return [1 if action == 0 else wrong_val for action in action_block]
+            return [1 if choice == 0 else wrong_val for choice in choice_block]
         else:
-            return [1 if action == 1 else wrong_val for action in action_block]
+            return [1 if choice == 1 else wrong_val for choice in choice_block]
 
 
 def pad_ragged_blocks(normalized_blocks: List[List[int]], max_len: int = 45) -> ndarray:
@@ -92,20 +99,40 @@ def pad_ragged_blocks(normalized_blocks: List[List[int]], max_len: int = 45) -> 
 
 
 def truncate_blocks(blocks: List[List[int]], truncate_length: int = 15) -> List[List[int]]:
+    """Truncate each block in a list of blocks to a specified length."""
     truncated_blocks = []
     for block in blocks:
         truncated_blocks.append(block[:truncate_length])
     return truncated_blocks
 
 
-def average_blocks(normalized_blocks: List[List[int]], max_len: int = 45, mode: str = 'ragged') -> List[float]:
-    """Take the average choice across blocks of trials with varying lengths."""
+def average_choice_blocks(normalized_choice_blocks: List[List[int]],
+                          max_len: int = None,
+                          mode: str = 'truncate') -> List[float]:
+    """
+    Average choices across blocks into a probability of a particular choice for each trial number in the block. Note:
+    blocks should already be normalized by correct side, s.t. the correct choice is 1 and incorrect is 0.
+    :param normalized_choice_blocks: Normalized choice data, list of blocks of choices.
+    :param max_len: Maximum possible length of trials, only need to set if using 'ragged' mode.
+    :param mode: Whether to truncate trials to the same length before averaging or do a ragged average.
+    :return: Single list of block choices, corresponds to probability of correct choice at a particular trial after
+    switch.
+    """
     if not max_len:
-        max_len = max([len(block) for block in normalized_blocks])
-    if mode == 'ragged':
+        max_len = max([len(block) for block in normalized_choice_blocks])
+
+    if mode == 'truncate':
+        min_len = min([len(block) for block in normalized_choice_blocks])
+        uniform_sum = np.zeros(min_len)
+        for block in normalized_choice_blocks:
+            block = np.array(block)
+            truncated_block = block[:min_len]
+            uniform_sum += truncated_block
+        return uniform_sum / len(normalized_choice_blocks)
+    elif mode == 'ragged':
         ragged_sum = np.zeros(max_len)
         idx_count = np.zeros(max_len)
-        for block in normalized_blocks:
+        for block in normalized_choice_blocks:
             block = np.array(block)
             block_idxs = np.ones(block.size)
             block_idxs = np.pad(block_idxs, pad_width=(0, max_len - block.size), mode='constant', constant_values=0)
@@ -114,39 +141,13 @@ def average_blocks(normalized_blocks: List[List[int]], max_len: int = 45, mode: 
             ragged_sum += lengthened_block
         return ragged_sum / idx_count
     else:
-        min_len = min([len(block) for block in normalized_blocks])
-        uniform_sum = np.zeros(min_len)
-        for block in normalized_blocks:
-            block = np.array(block)
-            truncated_block = block[:min_len]
-            uniform_sum += truncated_block
-        return uniform_sum / len(normalized_blocks)
+        raise NotImplementedError
 
 
-def convert_real_blocks(real_blocks: List[int], real_correct_side: List[int]) -> List[Tuple]:
-    real_blocks = np.array(real_blocks)
-    unique, counts = np.unique(real_blocks, return_counts=True)
-    blocks = []
-    if real_correct_side[0] == 1:
-        side = "LEFT"
-    else:
-        side = "RIGHT"
-    for num_trials in counts:
-        blocks.append((side, 1.0, int(num_trials)))
-        if side == "LEFT":
-            side = "RIGHT"
-        else:
-            side = "LEFT"
-    return blocks
-
-
-def convert_real_actions(real_actions: List[int]) -> List[int]:
-    for i, act in enumerate(real_actions):
-        if np.isnan(act):
-            real_actions[i] = 1
-    return [action - 1 for action in real_actions]
-
-
-def normalize(feats):
-    """Normalize features for clustering/classification"""
+def normalize_features(feats: ndarray) -> ndarray:
+    """
+    Normalize features for clustering/classification.
+    :param feats: features to normalize, should be of shape (num_samples, num_features).
+    :return: standardized features (subtract mean and divide by standard devation across samples for each feature).
+    """
     return (feats - np.expand_dims(np.mean(feats, axis=1), 1)) / np.expand_dims(np.std(feats, axis=1), 1)

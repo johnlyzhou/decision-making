@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt, colors
 from src.data.generate_synth_data import INITIAL_GUESS, SIGMOID_PARAM_BOUNDS
 from src.data.experiments import SynthExperiment
 from src.features.build_features import sigmoid_mse, sigmoid
-from src.utils import build_config, blockify, normalize_block_side, average_choice_blocks, pad_ragged_blocks
+from src.utils import build_config, blockify, normalize_choice_block_side, average_choice_blocks, pad_ragged_blocks
 
 
 def plot_block_sigmoid(eps: float = 0.1,
@@ -42,7 +42,7 @@ def plot_block_sigmoid(eps: float = 0.1,
     actions = expt.agent.action_history
     blocked_actions = blockify(expt.blocks, actions)
     blocks = expt.blocks
-    normalized_actions = [normalize_block_side(blocked_actions[block_idx], blocks[block_idx][0])
+    normalized_actions = [normalize_choice_block_side(blocked_actions[block_idx], blocks[block_idx][0])
                           for block_idx in range(len(blocks))]
     max_len = max([block[2] for block in blocks])
     averaged_blocks = average_choice_blocks(normalized_actions, max_len=max_len, mode="truncate")
@@ -93,7 +93,7 @@ def plot_behavior_simulation(eps: float = 0.1,
     actions = expt.agent.action_history
     blocked_actions = blockify(expt.blocks, actions)
     blocks = expt.blocks
-    normalized_actions = [normalize_block_side(blocked_actions[block_idx], blocks[block_idx][0], wrong_val=-1)
+    normalized_actions = [normalize_choice_block_side(blocked_actions[block_idx], blocks[block_idx][0], wrong_val=-1)
                           for block_idx in range(len(blocks))]
     max_len = max([block[2] for block in blocks])
     padded_blocks = pad_ragged_blocks(normalized_actions, max_len=max_len)

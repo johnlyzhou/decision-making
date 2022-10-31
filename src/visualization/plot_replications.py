@@ -2,12 +2,60 @@ from typing import Tuple
 
 import numpy as np
 import scipy
-from matplotlib import pyplot as plt, colors
+from matplotlib import pyplot as plt
+from numpy import ndarray
 
-from src.data.generate_synth_data import INITIAL_GUESS, SIGMOID_PARAM_BOUNDS
 from src.data.experiments import SynthExperiment
-from src.features.build_features import sigmoid_mse, sigmoid
+from src.data.generate_synth_data import INITIAL_GUESS, SIGMOID_PARAM_BOUNDS
+from src.features.build_features import sigmoid
+from src.features.losses import mse_loss
 from src.utils import build_config, blockify, normalize_choice_block_side, average_choice_blocks, pad_ragged_blocks
+
+TITLES = ["Lapse", "Slope", "Offset", "Efficiency"]
+
+
+def plot_heat_map(feats: ndarray,
+                  feat_idx: int,
+                  xrange: Tuple[float, float],
+                  yrange: Tuple[float, float],
+                  xnum: int,
+                  ynum: int,
+                  xlabel: str,
+                  ylabel: str,
+                  transpose: bool = False):
+    """
+    Plots heatmaps from Le et al. 2022, where the axes are parameter settings of the agents and the heat represents the
+    magnitude of each fitted feature of the sigmoid curve + foraging efficiency from an average over multiple blocks
+    of simualted trials.
+    :param feats:
+    :param feat_idx:
+    :param xrange:
+    :param yrange:
+    :param xnum:
+    :param ynum:
+    :param xlabel:
+    :param ylabel:
+    :param transpose:
+    :return:
+    """
+    fig, ax = plt.subplots()
+    feat = feats[feat_idx, :]
+
+    xs = np.linspace(*xrange, num=xnum)
+    ys = np.linspace(*yrange, num=ynum)
+    xs, ys = np.meshgrid(xs, ys)
+    if transpose:
+        zs = np.reshape(feat, (xnum, ynum))
+        zs = zs.T
+    else:
+        zs = np.reshape(feat, (ynum, xnum))
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    c = ax.pcolormesh(xs, ys, zs, cmap='Reds', vmin=np.min(feat), vmax=np.max(feat))
+    ax.set_title(TITLES[feat_idx])
+    ax.axis([*xrange, *yrange])
+    fig.colorbar(c, ax=ax)
 
 
 def plot_block_sigmoid(eps: float = 0.1,
@@ -49,7 +97,7 @@ def plot_block_sigmoid(eps: float = 0.1,
 
     x_obs = range(len(averaged_blocks))
     y_obs = averaged_blocks
-    params = scipy.optimize.minimize(sigmoid_mse, INITIAL_GUESS, method="Nelder-Mead", args=(x_obs, y_obs),
+    params = scipy.optimize.minimize(mse_loss, INITIAL_GUESS, method="Nelder-Mead", args=(x_obs, y_obs),
                                      bounds=SIGMOID_PARAM_BOUNDS).x
     plt.plot(np.linspace(0, len(averaged_blocks), num=1000),
              sigmoid(np.linspace(0, len(averaged_blocks), num=1000), *params), 'r-',

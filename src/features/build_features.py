@@ -1,21 +1,13 @@
-from typing import Union, List, Tuple
+from typing import Union, List
 
 import numpy as np
+import scipy
 from numpy import ndarray
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LogisticRegression
 
-
-def build_ssm_observations(*args: list) -> ndarray:
-    """
-    Takes in lists of observations and reshapes them into the correct observation format for the SSM library.
-    :param args: Lists of observation values of length n (corresponding to trials, blocks, etc.).
-    :return: List of tuples with each type of observation of length n.
-    """
-    if len(set([len(arg) for arg in args])) != 1:
-        print([len(arg) for arg in args])
-        raise ValueError("All lists of observations should be the same length!")
-
-    obs = list(zip(*args))
-    return np.array(obs)
+SIGMOID_PARAM_BOUNDS = ((0, 0.5), (0, 1.4), (0, 15))
+X_BOUNDS = (0, 15)
 
 
 def compute_foraging_efficiency(actions: Union[List[int], ndarray], rewards: Union[List[int], ndarray]) -> float:
@@ -27,7 +19,7 @@ def compute_foraging_efficiency(actions: Union[List[int], ndarray], rewards: Uni
     return np.sum((actions == rewards)) / len(actions)
 
 
-def sigmoid_initial_guess(y: List[float]) -> ndarray:
+def sigmoid_params_initial_guess(y: List[float]) -> ndarray:
     """
     Guess initial parameters for sigmoid fitting.
     :param y: Trial-averaged decision values for each timestep of the trial.
@@ -43,15 +35,6 @@ def sigmoid_initial_guess(y: List[float]) -> ndarray:
     return np.array([eps, a, s])
 
 
-def sigmoid_mse(params, X, y) -> ndarray:
-    """
-    Sigmoid curve with additional epsilon "lapse" parameter.
-    """
-    yhat = sigmoid(X, *params)
-    loss = np.sum((yhat - y) ** 2)
-    return loss
-
-
 def sigmoid(X: ndarray, eps: float, alpha: float, s: int) -> ndarray:
     """
     Sigmoid curve with additional epsilon "lapse" parameter.
@@ -61,4 +44,85 @@ def sigmoid(X: ndarray, eps: float, alpha: float, s: int) -> ndarray:
     :param s: Trial index at curve's midpoint.
     :return: Float in range [0, 1] indicating some percentage.
     """
-    return np.float64(eps + (1 - 2 * eps) / (1 + np.exp(-alpha * (X - s))))
+    return eps + (1 - 2 * eps) / (1 + np.exp(-alpha * (X - s)))
+
+
+def binary_logistic(X: ndarray, b0: float, b1: float) -> float:
+    """
+    Binary logistic function.
+    :param X: Trial indices from block switch.
+    :param b0: Bias term.
+    :param b1: Weight on X.
+    :return: P(y = 1 | X), or probability of a correct choice (after normalization) given number of trial from switch.
+    """
+    return 1 / (1 + np.exp(-X * b1 - b0))
+
+
+def get_sigmoid_feats(truncated_actions, loss, plot=False):
+    if type(truncated_actions) == ndarray:
+        truncated_actions = list(truncated_actions)
+
+    sig_feats = np.zeros((len(truncated_actions), 4))
+
+    for idx, action_block in enumerate(truncated_actions):
+        x_obs = np.arange(len(action_block))
+        y_obs = action_block
+
+        try:
+            params = scipy.optimize.minimize(loss, sigmoid_params_initial_guess(y_obs), args=(x_obs, y_obs),
+                                             bounds=SIGMOID_PARAM_BOUNDS).x
+            sig_feats[idx, :] = np.array([*params])
+        except RuntimeError:
+            print("Failed to fit.")
+            continue
+
+        if plot:
+            plt.plot(np.linspace(*X_BOUNDS, num=1000),
+                     sigmoid(np.linspace(*X_BOUNDS, num=1000), *params), 'r-',
+                     label='fit: eps=%5.3f, k=%5.3f, x0=%5.3f' % tuple(params))
+            plt.scatter(range(15), list(action_block))
+            plt.xlim(X_BOUNDS)
+            plt.ylim([0, 1])
+            plt.legend()
+            plt.show()
+
+    return sig_feats
+
+
+def get_logistic_feats(truncated_actions, plot=False):
+    if type(truncated_actions) == ndarray:
+        truncated_actions = list(truncated_actions)
+    logistic_feats = np.zeros((len(truncated_actions), 2))
+
+    for idx, action_block in enumerate(truncated_actions):
+        X = np.arange(len(action_block)).reshape(-1, 1)
+        y = np.array(action_block)
+
+        unique = np.unique(y)
+
+        a = LogisticRegression(random_state=0)
+
+        if unique.size == 1:
+            a.coef_ = np.array([[0]])
+            a.classes_ = np.array([0, 1])
+            if unique[0] == 0:
+                a.intercept_ = np.array([-1])
+            else:
+                a.intercept_ = np.array([1])
+
+        else:
+            b = a.fit(X, y)
+
+        logistic_feats[idx, :] = np.array([a.coef_[0][0], a.intercept_[0]])
+
+        if plot:
+            X_plot = np.linspace(0, 15, num=1000)
+            plt.scatter(range(15), list(action_block))
+            y_plot = a.predict_proba(X_plot.reshape(-1, 1))[:, 1]
+
+            plt.scatter(X_plot, y_plot, s=5)
+            plt.xlim([0, 14])
+            plt.ylim([0, 1])
+            plt.show()
+
+    return logistic_feats

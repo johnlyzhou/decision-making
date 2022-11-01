@@ -7,7 +7,7 @@ from tqdm import tqdm
 from src.data.agents import AgentInterface, QLearningAgent, InferenceAgent, SwitchingAgent
 from src.data.environments import EnvironmentInterface, DynamicForagingTask
 from src.data.experiments import SynthExperiment
-from src.features.build_features import sigmoid_params_initial_guess, sigmoid
+from src.features.fit_curves import sigmoid_params_initial_guess, epsilon_sigmoid
 from src.features.losses import mse_loss
 from src.utils import build_config, blockify, normalize_choice_block_side, average_choice_blocks, truncate_blocks
 
@@ -27,7 +27,8 @@ def run_experiment_batch(task: Type[EnvironmentInterface],
                          num_prews: int = 20,
                          true_pr_rew: float = 1.0,
                          trial_bounds: Tuple[int, int] = (15, 25),
-                         num_blocks: int = 10):
+                         num_blocks: int = 10,
+                         save: bool = False):
     """
     Run a batch of experiments and return trial data and corresponding labels.
     :param task: Type of task environment.
@@ -43,6 +44,7 @@ def run_experiment_batch(task: Type[EnvironmentInterface],
     :param true_pr_rew: Probability that the environment rewards the correct choice.
     :param trial_bounds: Range of num_trials in the block.
     :param num_blocks: Number of blocks to simulate and average across for fitting.
+    :param save: Whether to save results or not.
     :return: Two arrays, trial array of shape (num_trials_per_block, num_samples) and label array of shape
     (labels_dims, num_samples) containing parameter information.
     """
@@ -98,14 +100,14 @@ def run_experiment_batch(task: Type[EnvironmentInterface],
                 block_choices[:, running_idx] = np.array(action_block)
                 labels[:, running_idx] = np.array([p1, p2])
                 running_idx += 1
-
-    if agent == QLearningAgent:
-        np.save("/Users/johnzhou/research/decision-making/data/synth/ql_trials.npy", block_choices)
-        np.save("/Users/johnzhou/research/decision-making/data/synth/ql_labels.npy", labels)
-    elif agent == InferenceAgent:
-        np.save("/Users/johnzhou/research/decision-making/data/synth/inf_trials.npy", block_choices)
-        np.save("/Users/johnzhou/research/decision-making/data/synth/inf_labels.npy", labels)
-    else:
-        raise NotImplementedError
+    if save:
+        if agent == QLearningAgent:
+            np.save("/Users/johnzhou/research/decision-making/data/synth/ql_trials.npy", block_choices)
+            np.save("/Users/johnzhou/research/decision-making/data/synth/ql_labels.npy", labels)
+        elif agent == InferenceAgent:
+            np.save("/Users/johnzhou/research/decision-making/data/synth/inf_trials.npy", block_choices)
+            np.save("/Users/johnzhou/research/decision-making/data/synth/inf_labels.npy", labels)
+        else:
+            raise NotImplementedError
 
     return block_choices, labels

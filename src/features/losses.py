@@ -3,14 +3,14 @@ from typing import Callable
 import numpy as np
 from numpy import ndarray
 
-from src.features.build_features import sigmoid, binary_logistic
+from src.features.fit_curves import epsilon_sigmoid, binary_logistic
 
 
 def mse_loss(params: list, func: Callable, X: ndarray, y:ndarray) -> ndarray:
     """
     Sigmoid curve with additional epsilon "lapse" parameter.
     """
-    yhat = sigmoid(X, *params)
+    yhat = epsilon_sigmoid(X, *params)
     loss = np.sum((yhat - y) ** 2)
     return loss
 

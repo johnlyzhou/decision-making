@@ -35,7 +35,7 @@ def sigmoid_params_initial_guess(y: List[float]) -> ndarray:
     return np.array([eps, a, s])
 
 
-def sigmoid(X: ndarray, eps: float, alpha: float, s: int) -> ndarray:
+def epsilon_sigmoid(X: ndarray, eps: float, alpha: float, s: int) -> ndarray:
     """
     Sigmoid curve with additional epsilon "lapse" parameter.
     :param eps: Float in range [0, 1], epsilon exploration parameter, influences maximum value.
@@ -78,7 +78,7 @@ def get_sigmoid_feats(truncated_actions, loss, plot=False):
 
         if plot:
             plt.plot(np.linspace(*X_BOUNDS, num=1000),
-                     sigmoid(np.linspace(*X_BOUNDS, num=1000), *params), 'r-',
+                     epsilon_sigmoid(np.linspace(*X_BOUNDS, num=1000), *params), 'r-',
                      label='fit: eps=%5.3f, k=%5.3f, x0=%5.3f' % tuple(params))
             plt.scatter(range(15), list(action_block))
             plt.xlim(X_BOUNDS)

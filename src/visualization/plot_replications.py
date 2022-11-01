@@ -7,7 +7,7 @@ from numpy import ndarray
 
 from src.data.experiments import SynthExperiment
 from src.data.generate_synth_data import INITIAL_GUESS, SIGMOID_PARAM_BOUNDS
-from src.features.build_features import sigmoid
+from src.features.fit_curves import epsilon_sigmoid
 from src.features.losses import mse_loss
 from src.utils import build_config, blockify, normalize_choice_block_side, average_choice_blocks, pad_ragged_blocks
 
@@ -100,7 +100,7 @@ def plot_block_sigmoid(eps: float = 0.1,
     params = scipy.optimize.minimize(mse_loss, INITIAL_GUESS, method="Nelder-Mead", args=(x_obs, y_obs),
                                      bounds=SIGMOID_PARAM_BOUNDS).x
     plt.plot(np.linspace(0, len(averaged_blocks), num=1000),
-             sigmoid(np.linspace(0, len(averaged_blocks), num=1000), *params), 'r-',
+             epsilon_sigmoid(np.linspace(0, len(averaged_blocks), num=1000), *params), 'r-',
              label='fit: eps=%5.3f, k=%5.3f, x0=%5.3f' % tuple(params))
     plt.legend()
     plt.scatter(x_obs, averaged_blocks)

@@ -1,12 +1,13 @@
 from typing import Union, List
 
 import numpy as np
-import scipy
 from numpy import ndarray
 import matplotlib.pyplot as plt
+import scipy
 from sklearn.linear_model import LogisticRegression
+from tqdm import tqdm
 
-SIGMOID_PARAM_BOUNDS = ((0, 0.5), (0, 1.4), (0, 15))
+SIGMOID_PARAM_BOUNDS = ((0, 0.5), (-4, 4), (-float('inf'), float('inf')))
 X_BOUNDS = (0, 15)
 
 
@@ -31,7 +32,7 @@ def sigmoid_params_initial_guess(y: List[float]) -> ndarray:
             s = i
             break
     eps = 0.2
-    a = 5
+    a = 2
     return np.array([eps, a, s])
 
 
@@ -58,13 +59,13 @@ def binary_logistic(X: ndarray, b0: float, b1: float) -> float:
     return 1 / (1 + np.exp(-X * b1 - b0))
 
 
-def get_sigmoid_feats(truncated_actions, loss, plot=False):
+def get_sigmoid_feats(truncated_actions, loss, plot=False, save=False, save_path=None):
     if type(truncated_actions) == ndarray:
         truncated_actions = list(truncated_actions)
 
-    sig_feats = np.zeros((len(truncated_actions), 4))
+    sig_feats = np.zeros((len(truncated_actions), 3))
 
-    for idx, action_block in enumerate(truncated_actions):
+    for idx, action_block in enumerate(tqdm(truncated_actions)):
         x_obs = np.arange(len(action_block))
         y_obs = action_block
 
@@ -86,15 +87,17 @@ def get_sigmoid_feats(truncated_actions, loss, plot=False):
             plt.legend()
             plt.show()
 
+    if save and save_path:
+        np.save(save_path, sig_feats)
     return sig_feats
 
 
-def get_logistic_feats(truncated_actions, plot=False):
+def get_logistic_feats(truncated_actions, plot=False, save=False, save_path=None):
     if type(truncated_actions) == ndarray:
         truncated_actions = list(truncated_actions)
     logistic_feats = np.zeros((len(truncated_actions), 2))
 
-    for idx, action_block in enumerate(truncated_actions):
+    for idx, action_block in enumerate(tqdm(truncated_actions)):
         X = np.arange(len(action_block)).reshape(-1, 1)
         y = np.array(action_block)
 
@@ -111,7 +114,7 @@ def get_logistic_feats(truncated_actions, plot=False):
                 a.intercept_ = np.array([1])
 
         else:
-            b = a.fit(X, y)
+            a.fit(X, y)
 
         logistic_feats[idx, :] = np.array([a.coef_[0][0], a.intercept_[0]])
 
@@ -124,5 +127,7 @@ def get_logistic_feats(truncated_actions, plot=False):
             plt.xlim([0, 14])
             plt.ylim([0, 1])
             plt.show()
+    if save and save_path:
+        np.save(save_path, logistic_feats)
 
     return logistic_feats

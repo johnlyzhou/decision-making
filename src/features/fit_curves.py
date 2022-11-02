@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import List
 
 import numpy as np
 from numpy import ndarray
@@ -9,15 +9,6 @@ from tqdm import tqdm
 
 SIGMOID_PARAM_BOUNDS = ((0, 0.5), (-4, 4), (-float('inf'), float('inf')))
 X_BOUNDS = (0, 15)
-
-
-def compute_foraging_efficiency(actions: Union[List[int], ndarray], rewards: Union[List[int], ndarray]) -> float:
-    """Compute percentage of trials that are correct."""
-    if type(actions) is list:
-        actions = np.array(actions)
-    if type(rewards) is list:
-        rewards = np.array(rewards)
-    return np.sum((actions == rewards)) / len(actions)
 
 
 def sigmoid_params_initial_guess(y: List[float]) -> ndarray:

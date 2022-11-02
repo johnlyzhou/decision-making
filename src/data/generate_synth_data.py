@@ -102,11 +102,11 @@ def run_experiment_batch(task: Type[EnvironmentInterface],
                 running_idx += 1
     if save:
         if agent == QLearningAgent:
-            np.save("/Users/johnzhou/research/decision-making/data/synth/ql_trials.npy", block_choices)
-            np.save("/Users/johnzhou/research/decision-making/data/synth/ql_labels.npy", labels)
+            np.save("/data/processed/ql_trials.npy", block_choices)
+            np.save("/data/processed/ql_labels.npy", labels)
         elif agent == InferenceAgent:
-            np.save("/Users/johnzhou/research/decision-making/data/synth/inf_trials.npy", block_choices)
-            np.save("/Users/johnzhou/research/decision-making/data/synth/inf_labels.npy", labels)
+            np.save("/data/processed/inf_trials.npy", block_choices)
+            np.save("/data/processed/inf_labels.npy", labels)
         else:
             raise NotImplementedError
 

@@ -6,7 +6,7 @@ from numpy import ndarray
 from src.features.fit_curves import epsilon_sigmoid, binary_logistic
 
 
-def mse_loss(params: list, func: Callable, X: ndarray, y:ndarray) -> ndarray:
+def mse_loss(params: list, X: ndarray, y: ndarray) -> ndarray:
     """
     Sigmoid curve with additional epsilon "lapse" parameter.
     """
@@ -23,5 +23,5 @@ def binary_nll(params: list, X: ndarray, y: ndarray) -> ndarray:
     :param y: Binary target values in {0, 1}.
     :return: Negative log-likelihood of y given parameters b0 and b1.
     """
-    p_hat = binary_logistic(X, *params)
+    p_hat = epsilon_sigmoid(X, *params)
     return np.sum(np.multiply(-y, np.log(p_hat)) - np.multiply((1 - y), (np.log(1 - p_hat))))

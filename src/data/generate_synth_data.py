@@ -72,8 +72,8 @@ def run_experiment_batch(task: Type[EnvironmentInterface],
 
     p1s = np.linspace(p1_bounds[0], p1_bounds[1], num=num_p1)
     p2s = np.linspace(p2_bounds[0], p2_bounds[1], num=num_p2)
-    block_choices = np.zeros((trial_bounds[0], num_p1 * num_p2 * num_blocks))
-    labels = np.zeros((2, num_p1 * num_p2 * num_blocks))
+    block_choices = np.zeros((num_p1 * num_p2 * num_blocks, trial_bounds[0]))
+    labels = np.zeros((num_p1 * num_p2 * num_blocks, 2))
     running_idx = 0
 
     for p1 in tqdm(p1s):
@@ -97,8 +97,8 @@ def run_experiment_batch(task: Type[EnvironmentInterface],
             truncated_actions = truncate_blocks(normalized_actions, truncate_length=trial_bounds[0])
 
             for action_block in truncated_actions:
-                block_choices[:, running_idx] = np.array(action_block)
-                labels[:, running_idx] = np.array([p1, p2])
+                block_choices[running_idx, :] = np.array(action_block)
+                labels[running_idx, :] = np.array([p1, p2])
                 running_idx += 1
     if save:
         if agent == QLearningAgent:

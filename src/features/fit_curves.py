@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union, Callable
 
 import numpy as np
 from numpy import ndarray
@@ -27,7 +27,10 @@ def sigmoid_params_initial_guess(y: List[float]) -> ndarray:
     return np.array([eps, a, s])
 
 
-def epsilon_sigmoid(X: ndarray, eps: float, alpha: float, s: int) -> ndarray:
+def epsilon_sigmoid(X: ndarray,
+                    eps: float,
+                    alpha: float,
+                    s: int) -> ndarray:
     """
     Sigmoid curve with additional epsilon "lapse" parameter.
     :param eps: Float in range [0, 1], epsilon exploration parameter, influences maximum value.
@@ -39,7 +42,9 @@ def epsilon_sigmoid(X: ndarray, eps: float, alpha: float, s: int) -> ndarray:
     return eps + (1 - 2 * eps) / (1 + np.exp(-alpha * (X - s)))
 
 
-def binary_logistic(X: ndarray, b0: float, b1: float) -> float:
+def binary_logistic(X: ndarray,
+                    b0: float,
+                    b1: float) -> float:
     """
     Binary logistic function.
     :param X: Trial indices from block switch.
@@ -50,7 +55,12 @@ def binary_logistic(X: ndarray, b0: float, b1: float) -> float:
     return 1 / (1 + np.exp(-X * b1 - b0))
 
 
-def get_sigmoid_feats(truncated_actions, loss, plot=False, save=False, save_path=None):
+def get_sigmoid_feats(truncated_actions: Union[ndarray, list],
+                      loss: Callable,
+                      plot=False,
+                      save=False,
+                      save_path=None) -> ndarray:
+
     if type(truncated_actions) == ndarray:
         truncated_actions = list(truncated_actions)
 
@@ -83,7 +93,11 @@ def get_sigmoid_feats(truncated_actions, loss, plot=False, save=False, save_path
     return sig_feats
 
 
-def get_logistic_feats(truncated_actions, plot=False, save=False, save_path=None):
+def get_logistic_feats(truncated_actions: Union[ndarray, list],
+                       plot=False,
+                       save=False,
+                       save_path=None) -> ndarray:
+
     if type(truncated_actions) == ndarray:
         truncated_actions = list(truncated_actions)
     logistic_feats = np.zeros((len(truncated_actions), 2))

@@ -71,19 +71,28 @@ def validate_transition_matrix(transition_matrix: ndarray) -> None:
             raise ValueError("Rows of transition probabilities should sum to 1!")
 
 
-def normalize_choice_block_side(choice_block: List[int], side: str, wrong_val: int = 0) -> List[int]:
+def normalize_choice_block_side(choice_block: List[int],
+                                reward_block: List[int] = None,
+                                side: str = None,
+                                mode: str = 'side',
+                                wrong_val: int = 0) -> List[int]:
     """Normalize choice block info to assign the correct choice 1 matching side and the alternative wrong_val. As of
     now, this also labels NaN (no choice) trials as incorrect pending future plans."""
-    if wrong_val == 0:
-        if side == "LEFT":
-            return [int(choice == 0) for choice in choice_block]
+    if mode == 'side':
+        if wrong_val == 0:
+            if side == "LEFT":
+                return [int(choice == 0) for choice in choice_block]
+            else:
+                return [int(choice == 1) for choice in choice_block]
         else:
-            return [int(choice == 1) for choice in choice_block]
+            if side == "LEFT":
+                return [1 if choice == 0 else wrong_val for choice in choice_block]
+            else:
+                return [1 if choice == 1 else wrong_val for choice in choice_block]
+    elif mode == 'reward':
+        return [int(choice_block[i] == reward_block[i]) for i in range(len(choice_block))]
     else:
-        if side == "LEFT":
-            return [1 if choice == 0 else wrong_val for choice in choice_block]
-        else:
-            return [1 if choice == 1 else wrong_val for choice in choice_block]
+        raise NotImplementedError
 
 
 def pad_ragged_blocks(normalized_blocks: List[List[int]], max_len: int = 45) -> ndarray:
@@ -151,3 +160,16 @@ def normalize_features(feats: ndarray) -> ndarray:
     :return: standardized features (subtract mean and divide by standard devation across samples for each feature).
     """
     return (feats - np.expand_dims(np.mean(feats, axis=1), 1)) / np.expand_dims(np.std(feats, axis=1), 1)
+
+
+def remove_invalid_fits(feats: ndarray) -> ndarray:
+    """
+    Remove samples from an array of sigmoid features that fall outside of predetermined bounds.
+    :param feats: Array of sigmoid features.
+    :return: Array of sigmoid features with invalid samples removed.
+    """
+    # invalid_alpha = feats[:, 1] < 0
+    invalid_low_s = feats[:, 2] < 0
+    invalid_high_s = feats[:, 2] > 14
+    invalid_idxs = np.argwhere(invalid_low_s | invalid_high_s)
+    return np.delete(feats, invalid_idxs, axis=0)

@@ -11,9 +11,6 @@ from src.features.fit_curves import sigmoid_params_initial_guess, epsilon_sigmoi
 from src.features.losses import mse_loss
 from src.utils import build_config, blockify, normalize_choice_block_side, average_choice_blocks, truncate_blocks
 
-INITIAL_GUESS = np.array([0.2, 5, 11])
-SIGMOID_PARAM_BOUNDS = ((0, 0.5), (0, 1.4), (0, 15))
-
 
 def run_experiment_batch(task: Type[EnvironmentInterface],
                          agent: Type[AgentInterface],

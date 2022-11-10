@@ -28,6 +28,7 @@ def train(system_class,
             EarlyStopping(monitor="val_loss", patience=3),
             TQDMProgressBar(refresh_rate=20)
         ],
+        default_root_dir=str(experiment_dir)
     )
     trainer.fit(system)
     return system, trainer

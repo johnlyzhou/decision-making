@@ -1,4 +1,4 @@
-from typing import Tuple, Callable
+from typing import Tuple, Callable, Union
 
 from matplotlib import pyplot as plt
 import numpy as np
@@ -20,7 +20,7 @@ def plot_fitted_block(choice_block: ndarray,
     :param params: Parameters for curve function.
     :return: None
     """
-    x_bounds = (0, choice_block.size)
+    x_bounds = (0, choice_block.shape[1])
 
     plt.plot(np.linspace(*x_bounds, num=1000),
              curve_func(np.linspace(*x_bounds, num=1000), *params),
@@ -28,6 +28,30 @@ def plot_fitted_block(choice_block: ndarray,
     plt.scatter(range(choice_block.size), list(choice_block))
     plt.xlim(x_bounds)
     plt.ylim([0, 1])
+    plt.legend()
+    plt.show()
+
+
+def plot_sigmoids(curve_func: Callable,
+                  params_list: Union[ndarray, list],
+                  xlim: Tuple[int, int] = (0, 14),
+                  ylim: Tuple[int, int] = (0, 1),
+                  num_samples: int = 1000) -> None:
+    if type(params_list) == ndarray:
+        if params_list.ndim() == 1:
+            params_list = [params_list]
+        if params_list.ndim() > 2:
+            raise ValueError("Params should be of shape (num_samples, block_length).")
+    else:
+        if type(params_list[0]) != list or type(params_list[0]) != ndarray:
+            params_list = [params_list]
+
+    for params in params_list:
+        plt.plot(np.linspace(*xlim, num=num_samples),
+                 curve_func(np.linspace(*xlim, num=num_samples), *params),
+                 label=f"Parameters: {params}")
+    plt.xlim(xlim)
+    plt.ylim(ylim)
     plt.legend()
     plt.show()
 

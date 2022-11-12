@@ -11,11 +11,11 @@ from src.features.losses import mse_loss
 
 if __name__ == "__main__":
     data_dir = "/Users/johnzhou/research/decision-making/data"
-    expt_name = "test_short"
+    expt_name = "new_run"
     task = DynamicForagingTask
     p_rew = 1.0
     loss = mse_loss
-    num_blocks = 1
+    num_blocks = 100
 
     # Create data directory
     expt_dir = f"{data_dir}/processed/{expt_name}"
@@ -39,9 +39,9 @@ if __name__ == "__main__":
     print(choice_blocks.shape)
     np.save(f"{expt_dir}/choice_blocks.npy", choice_blocks)
 
-    agent_labels = np.hstack((np.zeros(ql_blocks.shape[0]), np.ones(inf_blocks.shape[0])))
-    print(agent_labels.shape)
-    np.save(f"{expt_dir}/agent_labels.npy", agent_labels)
+    agent_params = np.hstack((np.zeros(ql_blocks.shape[0]), np.ones(inf_blocks.shape[0])))
+    print(agent_params.shape)
+    np.save(f"{expt_dir}/agent_labels.npy", agent_params)
 
     param_labels = np.vstack((ql_params, inf_params))
     print(param_labels.shape)

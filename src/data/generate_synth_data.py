@@ -24,8 +24,7 @@ def run_experiment_batch(task: Type[EnvironmentInterface],
                          num_prews: int = 20,
                          true_pr_rew: float = 1.0,
                          trial_bounds: Tuple[int, int] = (15, 25),
-                         num_blocks: int = 10,
-                         save: bool = False):
+                         num_blocks: int = 10):
     """
     Run a batch of experiments and return trial data and corresponding labels.
     :param task: Type of task environment.
@@ -97,14 +96,5 @@ def run_experiment_batch(task: Type[EnvironmentInterface],
                 block_choices[running_idx, :] = np.array(action_block)
                 labels[running_idx, :] = np.array([p1, p2])
                 running_idx += 1
-    if save:
-        if agent == QLearningAgent:
-            np.save("/data/processed/ql_trials.npy", block_choices)
-            np.save("/data/processed/ql_labels.npy", labels)
-        elif agent == InferenceAgent:
-            np.save("/data/processed/inf_trials.npy", block_choices)
-            np.save("/data/processed/inf_labels.npy", labels)
-        else:
-            raise NotImplementedError
 
     return block_choices, labels

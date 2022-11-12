@@ -38,14 +38,15 @@ class ExperimentData:
         if include_sigmoid:
             feat_list.append(self.sigmoid_parameters)
         if include_feff:
-            feat_list.append(self.foraging_efficiency)
+            feat_list.append(np.expand_dims(self.foraging_efficiency, 1))
         if include_block:
             feat_list.append(self.choice_blocks)
 
         feats = np.hstack(feat_list)
+        print(feats.shape)
 
         if not feat_path:
-            np.save(f"{self.data_path}/modeling_features.npy")
+            np.save(f"{self.data_path}/modeling_features.npy", feats)
         else:
             np.save(feat_path, feats)
 
@@ -55,5 +56,6 @@ class ExperimentData:
         plot_fitted_block(self.choice_blocks[idx], epsilon_sigmoid, tuple(self.sigmoid_parameters[idx]))
 
     def visualize_sigmoids(self, idxs):
-        params_list = self.parameter_labels[idxs]
+        params_list = self.sigmoid_parameters[idxs, :]
+        print(params_list.shape)
         plot_sigmoids(epsilon_sigmoid, params_list)

@@ -37,10 +37,10 @@ def plot_sigmoids(curve_func: Callable,
                   xlim: Tuple[int, int] = (0, 14),
                   ylim: Tuple[int, int] = (0, 1),
                   num_samples: int = 1000) -> None:
-    if type(params_list) == ndarray:
-        if params_list.ndim() == 1:
+    if type(params_list) is ndarray:
+        if params_list.ndim == 1:
             params_list = [params_list]
-        if params_list.ndim() > 2:
+        elif params_list.ndim > 2:
             raise ValueError("Params should be of shape (num_samples, block_length).")
     else:
         if type(params_list[0]) != list or type(params_list[0]) != ndarray:
@@ -48,11 +48,10 @@ def plot_sigmoids(curve_func: Callable,
 
     for params in params_list:
         plt.plot(np.linspace(*xlim, num=num_samples),
-                 curve_func(np.linspace(*xlim, num=num_samples), *params),
-                 label=f"Parameters: {params}")
+                 curve_func(np.linspace(*xlim, num=num_samples), *params))
     plt.xlim(xlim)
     plt.ylim(ylim)
-    plt.legend()
+    # plt.legend()
     plt.show()
 
 

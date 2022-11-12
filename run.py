@@ -11,7 +11,7 @@ from src.features.losses import mse_loss
 
 if __name__ == "__main__":
     data_dir = "/Users/johnzhou/research/decision-making/data"
-    expt_name = "test"
+    expt_name = "test_short"
     task = DynamicForagingTask
     p_rew = 1.0
     loss = mse_loss
@@ -55,9 +55,9 @@ if __name__ == "__main__":
     print(feff.shape)
     np.save(f"{expt_dir}/foraging_efficiency.npy", feff)
 
-    yay = ExperimentData("test", "/Users/johnzhou/research/decision-making")
-    print(yay.choice_blocks.shape)
-    print(yay.agent_labels.shape)
-    print(yay.parameter_labels.shape)
-    print(yay.sigmoid_parameters.shape)
-    print(yay.foraging_efficiency.shape)
+    # yay = ExperimentData("test", "/Users/johnzhou/research/decision-making")
+    # print(yay.choice_blocks.shape)
+    # print(yay.agent_labels.shape)
+    # print(yay.parameter_labels.shape)
+    # print(yay.sigmoid_parameters.shape)
+    # print(yay.foraging_efficiency.shape)

@@ -1,15 +1,12 @@
 from typing import Tuple, Type
 
 import numpy as np
-import scipy
 from tqdm import tqdm
 
 from src.data.agents import AgentInterface, QLearningAgent, InferenceAgent, SwitchingAgent
 from src.data.environments import EnvironmentInterface, DynamicForagingTask
 from src.data.experiments import SynthExperiment
-from src.features.fit_curves import sigmoid_params_initial_guess, epsilon_sigmoid
-from src.features.losses import mse_loss
-from src.utils import build_config, blockify, normalize_choice_block_side, average_choice_blocks, truncate_blocks
+from src.utils import build_config, blockify, normalize_choice_block_side, truncate_blocks
 
 
 def run_experiment_batch(task: Type[EnvironmentInterface],

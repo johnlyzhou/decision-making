@@ -11,12 +11,11 @@ def train(system_class,
     seed_everything(config["random_seed"])
     system = system_class(config)
 
-    experiment_name = config["name"]
-    experiment_dir = Path(f"{experiment_dir}/{experiment_name}")
+    experiment_dir = Path(f"{experiment_dir}")
     experiment_dir.mkdir(parents=True, exist_ok=True)
 
     checkpoint_callback = ModelCheckpoint(
-        dirpath=experiment_dir,
+        dirpath=f"{experiment_dir}/models",
         filename=checkpoint_name,
         auto_insert_metric_name=True
     )

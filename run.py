@@ -1,11 +1,9 @@
 import os
-from collections import OrderedDict
 
 import numpy as np
 
 from src.data.agents import QLearningAgent, InferenceAgent
 from src.data.environments import DynamicForagingTask
-from src.data.experiment_data import ExperimentData
 from src.features.build_features import generate_synth_features
 from src.features.losses import mse_loss
 
@@ -54,10 +52,3 @@ if __name__ == "__main__":
     feff = np.hstack((ql_feff, inf_feff))
     print(feff.shape)
     np.save(f"{expt_dir}/foraging_efficiency.npy", feff)
-
-    # yay = ExperimentData("test", "/Users/johnzhou/research/decision-making")
-    # print(yay.choice_blocks.shape)
-    # print(yay.agent_labels.shape)
-    # print(yay.parameter_labels.shape)
-    # print(yay.sigmoid_parameters.shape)
-    # print(yay.foraging_efficiency.shape)

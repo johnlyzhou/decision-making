@@ -26,7 +26,7 @@ class RealDataset(Dataset):
         blocks = generate_real_block_params(real_expt.block, real_expt.correct_side)
         actions = convert_real_actions(real_expt.response_side)
         blocked_actions = blockify(blocks, actions)
-        normalized_actions = [torch.tensor(normalize_choice_block_side(blocked_actions[block_idx], blocks[block_idx][0]
+        normalized_actions = [torch.tensor(normalize_choice_block_side(blocked_actions[block_idx], side=blocks[block_idx][0]
                                                                        )[: self.min_len])
                               for block_idx in range(len(blocks)) if blocks[block_idx][2] >= self.min_len]
         return normalized_actions

@@ -3,7 +3,7 @@ from typing import Tuple, Type
 import numpy as np
 from tqdm import tqdm
 
-from src.data.agents import AgentInterface, QLearningAgent, InferenceAgent, SwitchingAgent
+from src.data.agents import AgentInterface, QLearningAgent, InferenceAgent
 from src.data.environments import EnvironmentInterface, DynamicForagingTask
 from src.data.experiments import SynthExperiment
 from src.utils import build_config, blockify, normalize_choice_block_side, truncate_blocks
@@ -58,8 +58,6 @@ def run_experiment_batch(task: Type[EnvironmentInterface],
         p2_bounds = prew_bounds
         num_p1 = num_pswitches
         num_p2 = num_prews
-    elif agent == SwitchingAgent:
-        raise NotImplementedError
     else:
         raise NotImplementedError
 
@@ -85,7 +83,7 @@ def run_experiment_batch(task: Type[EnvironmentInterface],
             rewards = expt.environment.reward_history
             blocked_actions = blockify(expt.blocks, actions)
             blocks = expt.blocks
-            normalized_actions = [normalize_choice_block_side(blocked_actions[block_idx], blocks[block_idx][0])
+            normalized_actions = [normalize_choice_block_side(blocked_actions[block_idx], side=blocks[block_idx][0])
                                   for block_idx in range(len(blocks))]
             truncated_actions = truncate_blocks(normalized_actions, truncate_length=trial_bounds[0])
 

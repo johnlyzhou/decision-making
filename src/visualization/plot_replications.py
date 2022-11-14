@@ -134,7 +134,7 @@ def plot_behavior_simulation(eps: float = 0.1,
     actions = expt.agent.action_history
     blocked_actions = blockify(expt.blocks, actions)
     blocks = expt.blocks
-    normalized_actions = [normalize_choice_block_side(blocked_actions[block_idx], blocks[block_idx][0], wrong_val=-1)
+    normalized_actions = [normalize_choice_block_side(blocked_actions[block_idx], side=blocks[block_idx][0], wrong_val=-1)
                           for block_idx in range(len(blocks))]
     max_len = max([block[2] for block in blocks])
     padded_blocks = pad_ragged_blocks(normalized_actions, max_len=max_len)

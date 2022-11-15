@@ -5,7 +5,7 @@ from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
 import numpy as np
 
-from src.data.agents import QLearningAgent, BeliefStateAgent, SwitchingAgent, BlockSwitchingAgent, InferenceAgent, \
+from src.data.agents import QLearningAgent, BeliefStateAgent, BlockSwitchingAgent, InferenceAgent, \
     UnknownAgent
 from src.data.environments import SwitchingStimulusTask, DynamicForagingTask, EnvironmentInterface
 from src.data.real_data import DynamicForagingData, generate_real_block_params, convert_real_actions
@@ -14,9 +14,6 @@ from src.data.real_data import DynamicForagingData, generate_real_block_params, 
 class ExperimentInterface(metaclass=abc.ABCMeta):
     def __init__(self):
         self.__done = False
-
-    def __str__(self) -> str:
-        raise NotImplementedError
 
     @property
     def done(self):
@@ -52,11 +49,31 @@ class RealExperiment(ExperimentInterface):
         else:
             raise NotImplementedError
 
-    def __str__(self) -> str:
-        return "RealExperiment"
-
     def run(self):
         raise NotImplementedError
+
+
+class BasicSynthExperiment(ExperimentInterface):
+    def __init__(self, agent, environment):
+        super().__init__()
+        self.agent = agent
+        self.environment = environment
+
+    def run(self):
+        for ep in range(len(self.environment) + 1):
+            self.environment.step()
+
+            if self.environment.done:
+                self.__done = True
+                break
+
+            if type(self.environment) == DynamicForagingTask:
+                agent_action = self.agent.sample_action()
+                correct_action = self.environment.get_current_rewarded_action()
+                reward = (agent_action == correct_action)
+                self.agent.update(agent_action, reward, block_switch=(self.environment.current_trial_idx == 0))
+            else:
+                raise NotImplementedError
 
 
 class SynthExperiment(ExperimentInterface):
@@ -73,9 +90,6 @@ class SynthExperiment(ExperimentInterface):
 
         self.task_type, self.blocks, self.environment = self.__init_environment()
         self.agent = self.__init_agent()
-
-    def __str__(self) -> str:
-        return "SynthExperiment"
 
     def run(self) -> None:
         """Run an agent through an environment."""
@@ -128,20 +142,6 @@ class SynthExperiment(ExperimentInterface):
             p_reward = self.config["p_reward"]
             p_switch = self.config["p_switch"]
             agent = BeliefStateAgent(p_reward, p_switch)
-        elif self.config["agent"].lower() == "switchingagent" or self.config["agent"].lower() == "blockswitchingagent":
-            transition_matrix = np.array(self.config["transition_probs"])
-            learning_rate = self.config["learning_rate"]
-            epsilon = self.config["epsilon"]
-            p_reward = self.config["p_reward"]
-            p_switch = self.config["p_switch"]
-            agents = [QLearningAgent(learning_rate, epsilon, task=self.task_type),
-                      BeliefStateAgent(p_reward, p_switch)]
-            if self.config["agent"].lower() == "switchingagent":
-                agent = SwitchingAgent(transition_matrix, agents)
-            elif self.config["agent"].lower() == "blockswitchingagent":
-                agent = BlockSwitchingAgent(transition_matrix, agents)
-            else:
-                raise NotImplementedError
         else:
             raise NotImplementedError
 

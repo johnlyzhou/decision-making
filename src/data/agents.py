@@ -325,67 +325,29 @@ class BeliefStateAgent(AgentInterface):
         self.__boundary_belief_history.append(new_boundary_beliefs)
 
 
-class SwitchingAgent(AgentInterface):
-    """Agent that switches strategies according to a transition matrix."""
-    def __init__(self, transition_matrix: ndarray, agents: List[Type[AgentInterface]]) -> None:
-        """
-        :param transition_matrix: Matrix where each entry is the probability of transitioning from the agent indexed by
-        the row to the agent indexed by the column.
-        :param agents: Different strategies (Agent objects) between which the agent can switch.
-        """
-        super().__init__()
-        validate_transition_matrix(transition_matrix)
-        self.transition_matrix = transition_matrix
-        self.agents = agents
-        if self.transition_matrix.shape[0] != len(self.agents) or self.transition_matrix.shape[1] != len(self.agents):
-            raise ValueError("Transition matrix shape should match number of agents!")
-        self.current_agent_idx = 0
-        self.__state_history = []
-        self.__action_history = []
-
-    def __str__(self) -> str:
-        return "SwitchingAgent"
-
-    @property
-    def action_history(self):
-        return self.__action_history
-
-    @property
-    def state_history(self):
-        return self.__state_history
-
-    def sample_action(self, stimulus_idx: int = None) -> int:
-        """
-        Sample an action according to a noisy stimulus perception and belief over current boundary location.
-        :param stimulus_idx: Index of stimulus, references the imported STIMULI_FREQS list.
-        :return: Index of the selected action.
-        """
-        action = self.agents[self.current_agent_idx].sample_action(stimulus_idx)
-        self.__action_history.append(action)
-        return action
-
-    def update(self, action: int, reward: Union[int, bool], stimulus_idx: int = None) -> None:
-        """Update every agent for each trial."""
-        self.__state_history.append(self.current_agent_idx)
-        for agent in self.agents:
-            agent.update(action, reward, stimulus_idx=stimulus_idx)
-        transition_probs = list(self.transition_matrix[self.current_agent_idx, :])
-        self.current_agent_idx = random.choices(range(len(self.agents)), transition_probs)[0]
-
-
 class BlockSwitchingAgent(AgentInterface):
     """Agent that switches strategies according to a transition matrix from block to block."""
-    def __init__(self, transition_matrix: ndarray, agents: List[Type[AgentInterface]]) -> None:
+    def __init__(self, transition_matrix: ndarray, agents: List[List[Union[QLearningAgent, InferenceAgent]]]) -> None:
         """
-        :param transition_matrix: Matrix where each entry is the probability of transitioning from the agent indexed by
-        the row to the agent indexed by the column.
-        :param agents: Different strategies (Agent objects) between which the agent can switch.
+        :param transition_matrix: Matrix where each entry is the probability of transitioning from the strategy indexed
+        by the row to the strategy indexed by the column.
+        :param agents: A list of length equal to the number of strategies, each strategy has a number of agents with
+        different parameter settings (currently uniformly distributed between bounds from Let et al. 2022) that will be
+        uniformly sampled from to choose the agent for each block of trials.
         """
         super().__init__()
-        validate_transition_matrix(transition_matrix)
+        if transition_matrix.ndim != 2:
+            raise ValueError
+        if transition_matrix.shape[0] != transition_matrix.shape[1]:
+            raise ValueError
+
         self.transition_matrix = transition_matrix
+        self.num_strategies = self.transition_matrix.shape[0]
+        if len(agents) != self.num_strategies:
+            raise ValueError("Outer length of agents should match the dimensions of the transition matrix!")
         self.agents = agents
-        self.current_agent_idx = 0
+        self.current_strategy_idx = np.random.randint(0, self.num_strategies)
+        self.current_agent_idx = np.random.randint(0, len(self.agents[self.current_strategy_idx]))
         if self.transition_matrix.shape[0] != len(self.agents) or self.transition_matrix.shape[1] != len(self.agents):
             raise ValueError("Transition matrix shape should match number of agents!")
         self.__action_history = []
@@ -398,13 +360,14 @@ class BlockSwitchingAgent(AgentInterface):
     def action_history(self):
         return self.__action_history
 
-    def sample_action(self, stimulus_idx: int = None) -> int:
+    def sample_action(self) -> int:
         """
         Sample an action according to a noisy stimulus perception and belief over current boundary location.
-        :param stimulus_idx: Index of stimulus, references the imported STIMULI_FREQS list.
         :return: Index of the selected action.
         """
-        action = self.agents[self.current_agent_idx].sample_action(stimulus_idx=stimulus_idx)
+        current_agent_idx = np.random.randint(0, len(self.agents[self.current_strategy_idx]))
+        agent = self.agents[self.current_strategy_idx][current_agent_idx]
+        action = agent.sample_action()
         self.__action_history.append(action)
         return action
 
@@ -419,38 +382,16 @@ class BlockSwitchingAgent(AgentInterface):
         :param reward: Whether reward was received for the trial (takes value 0 or 1).
         :param block_switch: Whether or not there is a block transition.
         """
-        for agent in self.agents:
-            agent.update(action, reward, stimulus_idx=stimulus_idx)
+        for strat_idx in range(self.num_strategies):
+            for agent in self.agents[strat_idx]:
+                agent.update(action, reward, stimulus_idx=stimulus_idx)
         if block_switch:
-            transition_probs = list(self.transition_matrix[self.current_agent_idx, :])
-            self.current_agent_idx = random.choices(range(len(self.agents)), transition_probs)[0]
-            self.state_history.append(self.current_agent_idx)
-
-
-class RecurrentBlockSwitchingAgent(AgentInterface):
-    """Agent that switches strategies (Q learning or belief state) according to a transition matrix and parameters
-    of those strategies according to a continuous dynamics function."""
-    def __init__(self, transition_matrix: ndarray, agents: List[Type[AgentInterface]]) -> None:
-        """
-        :param transition_matrix: Matrix where each entry is the probability of transitioning from the agent indexed by
-        the row to the agent indexed by the column.
-        :param agents: Different strategies (Agent objects) between which the agent can switch.
-        """
-        super().__init__()
-        validate_transition_matrix(transition_matrix)
-        self.transition_matrix = transition_matrix
-        self.__action_history = []
-        raise NotImplementedError
-
-    def __str__(self) -> str:
-        return "RecurrentBlockSwitchingAgent"
-
-    @property
-    def action_history(self):
-        return self.__action_history
-
-    def sample_action(self, stimulus_idx: int = None) -> int:
-        raise NotImplementedError
-
-    def update(self, action, reward, stimulus_idx=None, block_switch=False) -> None:
-        raise NotImplementedError
+            transition_probs = list(self.transition_matrix[self.current_strategy_idx, :])
+            self.current_strategy_idx = random.choices(range(len(self.agents)), transition_probs)[0]
+            self.current_agent_idx = np.random.randint(0, len(self.agents[self.current_strategy_idx]))
+            if self.current_strategy_idx == 0:
+                agent = self.agents[0][self.current_agent_idx]
+                self.state_history.append((self.current_strategy_idx, agent.learning_rate, agent.epsilon))
+            else:
+                agent = self.agents[1][self.current_agent_idx]
+                self.state_history.append((self.current_strategy_idx, agent.p_reward, agent.p_switch))

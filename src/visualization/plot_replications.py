@@ -23,12 +23,11 @@ def plot_fitted_block(choice_block: ndarray,
     x_bounds = (0, choice_block.shape[1])
 
     plt.plot(np.linspace(*x_bounds, num=1000),
-             curve_func(np.linspace(*x_bounds, num=1000), *params),
-             label=f"Parameters: {params}")
+             curve_func(np.linspace(*x_bounds, num=1000), *params))
     plt.scatter(range(choice_block.size), list(choice_block))
     plt.xlim(x_bounds)
     plt.ylim([0, 1])
-    plt.legend()
+    # plt.legend()
     plt.show()
 
 

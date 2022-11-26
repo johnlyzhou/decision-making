@@ -326,7 +326,8 @@ class BeliefStateAgent(AgentInterface):
 
 
 class BlockSwitchingAgent(AgentInterface):
-    """Agent that switches strategies according to a transition matrix from block to block."""
+    """Agent that switches strategies according to a transition matrix from block to block, all agents are updated based
+    on current agent's actions and rewards."""
     def __init__(self, transition_matrix: ndarray, agents: List[List[Union[QLearningAgent, InferenceAgent]]]) -> None:
         """
         :param transition_matrix: Matrix where each entry is the probability of transitioning from the strategy indexed
@@ -354,7 +355,7 @@ class BlockSwitchingAgent(AgentInterface):
         self.state_history = []
 
     def __str__(self) -> str:
-        return "BlockSwitchingAgent"
+        return "UpdatingBlockSwitchingAgent"
 
     @property
     def action_history(self):

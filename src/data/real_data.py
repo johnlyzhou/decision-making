@@ -66,7 +66,8 @@ class SwitchingStimulusData:
         self.right_performance = data['rPerformance'].flatten()
 
 
-def generate_real_block_params(real_blocks: List[int], real_correct_side: List[int]) -> List[Tuple]:
+def generate_real_block_params(real_blocks: List[int], real_correct_side: List[int], real_actions: List[int]=None,
+                               remove_nans=True) -> List[Tuple]:
     """
     Generate list of block parameters from real data.
     :param real_blocks: list of ints, where the index is the trial number and entry is the block number, e.g. [1, 1, 1,
@@ -75,6 +76,14 @@ def generate_real_block_params(real_blocks: List[int], real_correct_side: List[i
     block (note this is not necessarily the rewarded side in nondeterministic environments).
     :return: list of block parameters, of format (side, reward_probability, num_trials).
     """
+    if remove_nans:
+        nanless_actions = []
+        nanless_blocks = []
+        for idx in range(len(real_actions)):
+            if not np.isnan(real_actions[idx]):
+                nanless_actions.append(real_actions[idx])
+                nanless_blocks.append(real_blocks[idx])
+        real_blocks = nanless_blocks
     real_blocks = np.array(real_blocks)
     unique, counts = np.unique(real_blocks, return_counts=True)
     blocks = []
@@ -98,7 +107,10 @@ def convert_real_actions(real_actions: List[int]) -> List[int]:
     nan: no choice.
     :return: List of converted actions, where 0: left choice or no choice
     """
+    converted_actions = []
     for i, act in enumerate(real_actions):
         if np.isnan(act):
-            real_actions[i] = 0
-    return [int(action - 1) for action in real_actions]
+            continue
+        else:
+            converted_actions.append(int(act - 1))
+    return converted_actions

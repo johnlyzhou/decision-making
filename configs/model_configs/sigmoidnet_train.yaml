@@ -1,4 +1,4 @@
-name: new_run
+name: generate_ssm_histogram
 random_seed: 4995
 model:
   in_features: 3
@@ -9,8 +9,8 @@ model:
   use_batch_norm: false
 learning_rate: 0.0001
 data:
-  feature_path: /Users/johnzhou/research/decision-making/data/processed/new_run/modeling_features.npy
-  label_path: /Users/johnzhou/research/decision-making/data/processed/new_run/modeling_labels.npy
+  feature_path: /Users/johnzhou/research/decision-making/data/processed/generate_ssm_histogram/modeling_features.npy
+  label_path: /Users/johnzhou/research/decision-making/data/processed/generate_ssm_histogram/modeling_labels.npy
   train_proportion: 0.8
   train_batch_size: 128
   val_batch_size: 128

@@ -47,23 +47,39 @@ def model_training_run(expt_dir, task, p_rew, loss, num_blocks):
     np.save(f"{expt_dir}/foraging_efficiency.npy", feff)
 
 
-def run_switching_experiment(transition_matrix: ndarray,
-                             lr_bounds: Tuple[float, float] = (0.01, 1.4),
-                             eps_bounds: Tuple[float, float] = (0.01, 0.5),
-                             num_lrs: int = 25,
-                             num_eps: int = 20,
-                             pswitch_bounds: Tuple[float, float] = (0.01, 0.45),
-                             prew_bounds: Tuple[float, float] = (0.55, 0.99),
-                             num_pswitches: int = 25,
-                             num_prews: int = 20,
-                             true_pr_rew: float = 1.0,
-                             trial_range: Tuple[int, int] = (15, 25),
-                             num_blocks: int = 50):
+def run_sampling_switching_experiment(transition_matrix: ndarray,
+                                      lr_bounds: Tuple[float, float] = (0.01, 1.4),
+                                      eps_bounds: Tuple[float, float] = (0.01, 0.5),
+                                      num_lrs: int = 25,
+                                      num_eps: int = 20,
+                                      pswitch_bounds: Tuple[float, float] = (0.01, 0.45),
+                                      prew_bounds: Tuple[float, float] = (0.55, 0.99),
+                                      num_pswitches: int = 25,
+                                      num_prews: int = 20,
+                                      true_pr_rew: float = 1.0,
+                                      trial_range: Tuple[int, int] = (15, 25),
+                                      num_blocks: int = 50):
+    pass
+
+
+def run_updating_switching_experiment(transition_matrix: ndarray,
+                                      lr_bounds: Tuple[float, float] = (0.01, 1.4),
+                                      eps_bounds: Tuple[float, float] = (0.01, 0.5),
+                                      num_lrs: int = 25,
+                                      num_eps: int = 20,
+                                      pswitch_bounds: Tuple[float, float] = (0.01, 0.45),
+                                      prew_bounds: Tuple[float, float] = (0.55, 0.99),
+                                      num_pswitches: int = 25,
+                                      num_prews: int = 20,
+                                      true_pr_rew: float = 1.0,
+                                      trial_range: Tuple[int, int] = (15, 25),
+                                      num_blocks: int = 50):
     """Switch between QL and inference agent with transition matrix, for each block randomly sample some parameter
     setting for that agent and run them through the block. May need to generate all the agents so we can update them
     all simultaneously."""
     lrs, eps = np.meshgrid(np.linspace(*lr_bounds, num=num_lrs), np.linspace(*eps_bounds, num=num_eps), indexing="ij")
-    ql_agents = [QLearningAgent(lrs.flatten()[i], eps.flatten()[i], DynamicForagingTask) for i in range(num_lrs * num_eps)]
+    ql_agents = [QLearningAgent(lrs.flatten()[i], eps.flatten()[i], DynamicForagingTask) for i in
+                 range(num_lrs * num_eps)]
     pswitches, prews = np.meshgrid(np.linspace(*pswitch_bounds, num=num_pswitches),
                                    np.linspace(*prew_bounds, num=num_prews))
     inf_agents = [InferenceAgent(pswitches.flatten()[i], prews.flatten()[i]) for i in range(num_pswitches * num_prews)]
@@ -90,11 +106,11 @@ def run_switching_experiment(transition_matrix: ndarray,
 
 if __name__ == "__main__":
     data_dir = "/Users/johnzhou/research/decision-making/data"
-    expt_name = "new_run"
+    expt_name = "generate_ssm_histogram"
     environment = DynamicForagingTask
     p_reward = 1.0
     loss_func = mse_loss
-    n_blocks = 100
+    n_blocks = 1000
 
     # Create data directory
     experiment_dir = f"{data_dir}/processed/{expt_name}"

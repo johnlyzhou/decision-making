@@ -41,7 +41,7 @@ class RealExperiment(ExperimentInterface):
         self.task_type = task_type
         if self.task_type is DynamicForagingTask:
             self.data = DynamicForagingData(filename)
-            self.blocks = generate_real_block_params(self.data.block, self.data.correct_side)
+            self.blocks = generate_real_block_params(self.data.block, self.data.correct_side, real_actions=self.data.response_side)
             self.action_history = convert_real_actions(self.data.response_side)
             self.reward_history = self.data.rewarded
             self.environment = DynamicForagingTask(self.blocks, self.reward_history)

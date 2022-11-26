@@ -7,7 +7,7 @@ import scipy
 from sklearn.linear_model import LogisticRegression
 from tqdm import tqdm
 
-SIGMOID_PARAM_BOUNDS = ((0, 0.5), (-4, 4), (-float('inf'), float('inf')))
+SIGMOID_PARAM_BOUNDS = ((0, 0.5), (0, 4), (-1, 14))
 X_BOUNDS = (0, 15)
 
 

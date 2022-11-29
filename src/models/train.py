@@ -1,13 +1,14 @@
 from pathlib import Path
 
-from pytorch_lightning import Trainer, seed_everything
+from pytorch_lightning import LightningModule, Trainer, seed_everything
 from pytorch_lightning.callbacks import TQDMProgressBar, ModelCheckpoint, EarlyStopping
 
 
-def train(system_class,
-          config,
-          experiment_dir="experiments",
-          checkpoint_name="vae_{val_loss:.3f}.ckpt"):
+def train(system_class: LightningModule,
+          config: dict,
+          experiment_dir: str = "experiments",
+          checkpoint_name: str = "vae_{val_loss:.3f}.ckpt"):
+
     seed_everything(config["random_seed"])
     system = system_class(config)
 

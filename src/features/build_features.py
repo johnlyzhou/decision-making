@@ -6,7 +6,7 @@ from numpy import ndarray
 
 from src.data.agents import QLearningAgent, AgentInterface
 from src.data.environments import DynamicForagingTask, EnvironmentInterface
-from src.data.generate_synth_data import run_experiment_batch
+from run import run_experiment_batch
 
 from src.features.fit_curves import X_BOUNDS, get_sigmoid_feats
 

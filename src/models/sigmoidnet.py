@@ -81,37 +81,3 @@ class SigmoidNet(LightningModule):
         }, on_step=False, on_epoch=True, prog_bar=True)
 
         return loss
-
-
-if __name__ == "__main__":
-    data_path = "/Users/johnzhou/research/decision-making/data/processed"
-    config = OmegaConf.create({
-        "name": "test_expt",
-        "random_seed": 4995,
-        "model": {
-            "in_features": 3,
-            "linear_layers": [2],
-            "use_batch_norm": False
-        },
-        "learning_rate": 1e-4,
-        "data": {
-            "feature_path": f"{data_path}/ql_mse_sig.npy",
-            "label_path": f"{data_path}/ql_labels.npy",
-            "train_proportion": 0.8,
-            "train_batch_size": 100,
-            "val_batch_size": 100
-        },
-        "trainer": {
-            "gpus": 0,
-            "max_epochs": 100
-        },
-
-    })
-
-    batch_size = 100
-    num_feats = 3
-    test_data = torch.ones((batch_size, num_feats))
-    net = SigmoidNet(OmegaConf.to_container(config))
-    out = net(test_data)
-    print(test_data.shape)
-    print(out.shape)

@@ -57,9 +57,7 @@ def binary_logistic(X: ndarray,
 
 def get_sigmoid_feats(truncated_actions: Union[ndarray, list],
                       loss: Callable,
-                      plot=False,
-                      save=False,
-                      save_path=None) -> ndarray:
+                      plot=False) -> ndarray:
 
     if type(truncated_actions) == ndarray:
         truncated_actions = list(truncated_actions)
@@ -88,15 +86,11 @@ def get_sigmoid_feats(truncated_actions: Union[ndarray, list],
             plt.legend()
             plt.show()
 
-    if save and save_path:
-        np.save(save_path, sig_feats)
     return sig_feats
 
 
 def get_logistic_feats(truncated_actions: Union[ndarray, list],
-                       plot=False,
-                       save=False,
-                       save_path=None) -> ndarray:
+                       plot=False) -> ndarray:
 
     if type(truncated_actions) == ndarray:
         truncated_actions = list(truncated_actions)
@@ -132,7 +126,5 @@ def get_logistic_feats(truncated_actions: Union[ndarray, list],
             plt.xlim([0, 14])
             plt.ylim([0, 1])
             plt.show()
-    if save and save_path:
-        np.save(save_path, logistic_feats)
 
     return logistic_feats

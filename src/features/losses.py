@@ -3,7 +3,7 @@ from typing import Callable
 import numpy as np
 from numpy import ndarray
 
-from src.features.fit_curves import epsilon_sigmoid, binary_logistic
+from src.features.fit_curves import epsilon_sigmoid
 
 
 def mse_loss(params: list, X: ndarray, y: ndarray) -> ndarray:

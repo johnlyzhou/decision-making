@@ -8,7 +8,6 @@ from numpy import ndarray
 
 from src.data.environments import STIMULI_FREQS, ACTIONS, BOUNDARY_FREQS
 from src.data.environments import SwitchingStimulusTask, DynamicForagingTask, EnvironmentInterface
-from src.utils import validate_transition_matrix
 
 
 class AgentInterface(metaclass=abc.ABCMeta):

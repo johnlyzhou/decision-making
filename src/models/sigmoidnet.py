@@ -1,10 +1,9 @@
 from typing import Tuple
 
 import numpy as np
-from omegaconf import OmegaConf
 from pytorch_lightning import LightningModule
-import torch
 from sklearn.model_selection import train_test_split
+import torch
 from torch import tensor
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data import TensorDataset

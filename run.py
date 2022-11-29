@@ -1,13 +1,15 @@
 import os
-from typing import Type, Tuple
+from typing import Type, Tuple, Callable
 
 import numpy as np
+from numpy import ndarray
 from tqdm import tqdm
 
 from src.data.agents import QLearningAgent, InferenceAgent, AgentInterface
 from src.data.environments import DynamicForagingTask, EnvironmentInterface
 from src.data.experiments import SynthExperiment
-from src.features.build_features import generate_synth_features
+from src.features.build_features import compute_foraging_efficiency
+from src.features.fit_curves import get_sigmoid_feats
 from src.features.losses import mse_loss
 from src.utils import normalize_choice_block_side, blockify, truncate_blocks, build_config
 
@@ -82,7 +84,6 @@ def run_experiment_batch(task: Type[EnvironmentInterface],
             expt = SynthExperiment(config)
             expt.run()
             actions = expt.agent.action_history
-            rewards = expt.environment.reward_history
             blocked_actions = blockify(expt.blocks, actions)
             blocks = expt.blocks
             normalized_actions = [normalize_choice_block_side(blocked_actions[block_idx], side=blocks[block_idx][0])
@@ -95,6 +96,22 @@ def run_experiment_batch(task: Type[EnvironmentInterface],
                 running_idx += 1
 
     return block_choices, labels
+
+
+def generate_synth_features(task: Type[EnvironmentInterface],
+                            agent: Type[AgentInterface],
+                            pr_rew: float,
+                            fit_loss: Callable,
+                            num_blocks: int = 10) -> Tuple[ndarray, ndarray, ndarray, ndarray]:
+    # Generate Q learning agent data
+    block_choices, param_labels = run_experiment_batch(task,
+                                                       agent,
+                                                       num_blocks=num_blocks,
+                                                       true_pr_rew=pr_rew)
+    sigmoid_params = get_sigmoid_feats(block_choices, fit_loss, plot=False)
+    feff = compute_foraging_efficiency(block_choices)
+
+    return block_choices, param_labels, sigmoid_params, feff
 
 
 def model_training_run(expt_dir, task, p_rew, loss, num_blocks):

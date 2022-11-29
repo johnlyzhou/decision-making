@@ -3,42 +3,44 @@ from typing import List, Tuple
 import numpy as np
 from scipy import io
 
-from src.data.environments import DynamicForagingTask, SwitchingStimulusTask
+from src.data.environments import DynamicForagingTask
 
 
 class RealSessionDataset:
     """Simplifies access to fields from .mat file."""
     def __init__(self, filename: str) -> None:
+        self.data = io.loadmat(filename, simplify_cells=True)['SessionData']
+
+        # Session information
         self.environment = DynamicForagingTask
-        data = io.loadmat(filename)['SessionData'][0][0]
-        self.trial_settings = data['TrialSettings'][0]
-        self.stages = [setting[8][0] for setting in self.trial_settings]
-        self.num_trials = data['nTrials'].flatten()[0]
-        self.rewarded = data['Rewarded'].flatten()
-        self.animal_weight = data['AnimalWeight'].flatten()[0]
-        self.trial_start_time = data['TrialStartTimestamp'][0]
-        self.trial_end_time = data['TrialEndTimestamp'][0]
-        self.punished = data['Punished'].flatten()
-        self.did_not_choose = data['DidNotChoose'].flatten()
-        self.iti_jitter = data['ITIjitter'].flatten()
-        self.correct_side = data['CorrectSide'].flatten()
-        self.decision_gap = data['decisionGap'].flatten()
-        self.block = data['Block'].flatten()
-        self.assisted = data['Assisted'].flatten()
-        self.single_spout = data['SingleSpout'].flatten()
-        self.auto_reward = data['AutoReward'].flatten()
-        self.response_side = data['ResponseSide'].flatten()
-        self.ml_water_received = data['mLWaterReceived'].flatten()[0]
+        self.subject_name = self.data['TrialSettings'][0]['SubjectName']
+        self.animal_weight = self.data['AnimalWeight']
+        self.ml_water_received = self.data['mLWaterReceived']
+        self.num_trials = self.data['nTrials']
+
+        # Basic information about individual trial conditions and outcomes
+        self.actions = self.data['ResponseSide']
+        self.correct_side = self.data['CorrectSide']
+        self.rewarded = self.data['Rewarded']
+        self.blocks = self.data['Block']
+
+        # More in-depth information
+        self.events = [trial['Events'] for idx, trial in enumerate(self.data['RawEvents']['Trial'])]
+        self.states = [trial['States'] for idx, trial in enumerate(self.data['RawEvents']['Trial'])]
 
 
-def generate_real_block_params(real_blocks: List[int], real_correct_side: List[int], real_actions: List[int]=None,
-                               remove_nans=True) -> List[Tuple]:
+def generate_real_block_params(real_blocks: List[int],
+                               real_correct_side: List[int],
+                               real_actions: List[int] = None,
+                               remove_nans: bool = True) -> List[Tuple]:
     """
     Generate list of block parameters from real data.
     :param real_blocks: list of ints, where the index is the trial number and entry is the block number, e.g. [1, 1, 1,
     2, 2, 2, 2, 3, 3] would represent 3 trials in block 1, 4 in block 2, and 2 in block 3.
     :param real_correct_side: list of ints, where the index is the trial number and entry is the correct side in the
     block (note this is not necessarily the rewarded side in nondeterministic environments).
+    :param real_actions: list of actions used to remove nans (no-choice trials), only needed if remove_nans is True.
+    :param remove_nans: drop nans from block trial counts if True.
     :return: list of block parameters, of format (side, reward_probability, num_trials).
     """
     if remove_nans:

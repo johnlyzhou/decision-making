@@ -1,14 +1,7 @@
-import os
-from typing import Callable, Type, Tuple
-
 import numpy as np
 from numpy import ndarray
 
-from src.data.agents import QLearningAgent, AgentInterface
-from src.data.environments import DynamicForagingTask, EnvironmentInterface
-from run import run_experiment_batch
-
-from src.features.fit_curves import X_BOUNDS, get_sigmoid_feats
+from src.features.fit_curves import X_BOUNDS
 
 
 def compute_foraging_efficiency(normalized_block_choices: ndarray) -> ndarray:
@@ -17,22 +10,6 @@ def compute_foraging_efficiency(normalized_block_choices: ndarray) -> ndarray:
         raise ValueError(f"Input should be of shape (num_blocks, num_trials), and num_trials should be {X_BOUNDS[1]}")
     E = np.mean(normalized_block_choices, axis=1)
     return E
-
-
-def generate_synth_features(task: Type[EnvironmentInterface],
-                            agent: Type[AgentInterface],
-                            pr_rew: float,
-                            fit_loss: Callable,
-                            num_blocks: int = 10) -> Tuple[ndarray, ndarray, ndarray, ndarray]:
-    # Generate Q learning agent data
-    block_choices, param_labels = run_experiment_batch(task,
-                                                       agent,
-                                                       num_blocks=num_blocks,
-                                                       true_pr_rew=pr_rew)
-    sigmoid_params = get_sigmoid_feats(block_choices, fit_loss, plot=False)
-    feff = compute_foraging_efficiency(block_choices)
-
-    return block_choices, param_labels, sigmoid_params, feff
 
 
 def normalize_features(feats: ndarray) -> ndarray:

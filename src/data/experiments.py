@@ -52,6 +52,8 @@ class RealExperiment(ExperimentInterface):
             else:
                 self.valid_idxs = np.arange(self.dataset.actions.size)
 
+            self.num_trials = self.valid_idxs.size
+
             self.blocks = generate_real_block_params(self.dataset.blocks[self.valid_idxs],
                                                      self.dataset.correct_side[self.valid_idxs])
             self.action_history = convert_real_actions(self.dataset.actions[self.valid_idxs])
@@ -59,6 +61,21 @@ class RealExperiment(ExperimentInterface):
             self.environment = DynamicForagingTask(self.blocks, self.reward_history)
             self.agent = UnknownAgent(list(self.action_history))
 
+            self.response_wait_start_time = None
+            self.first_response_time = None
+            self.second_response_time = None
+            self.reaction_time = None
+            self.inter_reaction_delay = None
+            self.states = self.dataset.states[self.valid_idxs]
+
+            if remove_nans:
+                self.response_wait_start_time = np.array([trial_state['WaitForResponse'][0]
+                                                          if trial_state['WaitForResponse'].ndim == 1
+                                                          else trial_state['WaitForResponse'][0][0]
+                                                          for trial_state in self.states])
+                self.first_response_time, self.second_response_time = self._get_response_times()
+                self.reaction_time = self.first_response_time - self.response_wait_start_time
+                self.inter_reaction_delay = self.second_response_time - self.first_response_time
         else:
             raise NotImplementedError
 
@@ -71,6 +88,22 @@ class RealExperiment(ExperimentInterface):
                               for block_idx in range(len(self.blocks))]
         truncated_actions = truncate_blocks(normalized_actions, truncate_length=min_len)
         return [choice_block for choice_block in truncated_actions if len(choice_block) >= min_len]
+
+    def _get_response_times(self):
+        first_response_time = np.zeros(self.num_trials)
+        second_response_time = np.zeros(self.num_trials)
+        for idx in range(self.num_trials):
+            if self.reward_history[idx]:
+                if self.states[idx]['CheckReward'].ndim == 1:
+                    first_response_time[idx], second_response_time[idx] = self.states[idx]['CheckReward']
+                else:
+                    first_response_time[idx], second_response_time[idx] = self.states[idx]['CheckReward'][-1]
+            else:
+                if self.states[idx]['CheckPunish'].ndim == 1:
+                    first_response_time[idx], second_response_time[idx] = self.states[idx]['CheckPunish']
+                else:
+                    first_response_time[idx], second_response_time[idx] = self.states[idx]['CheckPunish'][-1]
+        return first_response_time, second_response_time
 
 
 class BasicSynthExperiment(ExperimentInterface):

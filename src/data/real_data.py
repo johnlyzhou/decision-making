@@ -26,8 +26,8 @@ class RealSessionDataset:
         self.blocks = self.data['Block']
 
         # More in-depth information
-        self.events = [trial['Events'] for idx, trial in enumerate(self.data['RawEvents']['Trial'])]
-        self.states = [trial['States'] for idx, trial in enumerate(self.data['RawEvents']['Trial'])]
+        self.events = np.array([trial['Events'] for idx, trial in enumerate(self.data['RawEvents']['Trial'])])
+        self.states = np.array([trial['States'] for idx, trial in enumerate(self.data['RawEvents']['Trial'])])
 
 
 def generate_real_block_params(real_blocks: List[int], real_correct_side: List[int]) -> List[Tuple]:

@@ -1,6 +1,7 @@
 import abc
 from typing import Union, Any, Tuple, Type
 
+import numpy as np
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
 
@@ -8,6 +9,7 @@ from src.data.agents import QLearningAgent, BeliefStateAgent, BlockSwitchingAgen
     UnknownAgent
 from src.data.environments import SwitchingStimulusTask, DynamicForagingTask, EnvironmentInterface
 from src.data.real_data import RealSessionDataset, generate_real_block_params, convert_real_actions
+from src.utils import blockify, normalize_choice_block_side, truncate_blocks
 
 
 class ExperimentInterface(metaclass=abc.ABCMeta):
@@ -30,27 +32,45 @@ class ExperimentInterface(metaclass=abc.ABCMeta):
 
 
 class RealExperiment(ExperimentInterface):
-    def __init__(self, filename: str = None, task_type: Type[EnvironmentInterface] = None):
+    def __init__(self, filename: str = None,
+                 task_type: Type[EnvironmentInterface] = None,
+                 remove_nans: bool = True):
         """
         :param filename: Path to MATLAB file generated from a real experiment.
         :param task_type: Type of task.
+        :param remove_nans: Whether to remove trials where the animal doesn't make a choice
         """
         super().__init__()
         self.__done = True
         self.task_type = task_type
+
         if self.task_type is DynamicForagingTask:
-            self.data = RealSessionDataset(filename)
-            self.blocks = generate_real_block_params(self.data.blocks, self.data.correct_side,
-                                                     real_actions=self.data.actions)
-            self.action_history = convert_real_actions(self.data.actions)
-            self.reward_history = self.data.rewarded
+            self.dataset = RealSessionDataset(filename)
+
+            if remove_nans:
+                self.valid_idxs = np.argwhere(~np.isnan(self.dataset.actions)).flatten()
+            else:
+                self.valid_idxs = np.arange(self.dataset.actions.size)
+
+            self.blocks = generate_real_block_params(self.dataset.blocks[self.valid_idxs],
+                                                     self.dataset.correct_side[self.valid_idxs])
+            self.action_history = convert_real_actions(self.dataset.actions[self.valid_idxs])
+            self.reward_history = self.dataset.rewarded[self.valid_idxs]
             self.environment = DynamicForagingTask(self.blocks, self.reward_history)
-            self.agent = UnknownAgent(self.action_history)
+            self.agent = UnknownAgent(list(self.action_history))
+
         else:
             raise NotImplementedError
 
     def run(self):
         raise NotImplementedError
+
+    def get_preprocessed_blocks(self, min_len: int = 15):
+        blocked_actions = blockify(self.blocks, list(self.action_history))
+        normalized_actions = [normalize_choice_block_side(blocked_actions[block_idx], side=self.blocks[block_idx][0])
+                              for block_idx in range(len(self.blocks))]
+        truncated_actions = truncate_blocks(normalized_actions, truncate_length=min_len)
+        return [choice_block for choice_block in truncated_actions if len(choice_block) >= min_len]
 
 
 class BasicSynthExperiment(ExperimentInterface):

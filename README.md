@@ -1,6 +1,6 @@
 # Decision Making
 
-A package designed to model decision-making behaviors in mice from 2AFC task experiments using dynamical systems and simulated reinforcement learning agents.
+A package designed to differentiate model-free and model-based decision-making paradigms from mice performing 2AFC experiments.
 
 ### User Instructions
 First, create a virtual environment (there are many ways to do so, I use [Anaconda](https://www.anaconda.com/products/individual) and will demonstrate with that):

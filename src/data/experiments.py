@@ -1,14 +1,16 @@
 import abc
-from typing import Union, Any, Tuple, Type
+from typing import Any, Tuple, Type, Union
 
 import numpy as np
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
 
-from src.data.agents import QLearningAgent, BeliefStateAgent, BlockSwitchingAgent, InferenceAgent, \
-    UnknownAgent
-from src.data.environments import SwitchingStimulusTask, DynamicForagingTask, EnvironmentInterface
-from src.data.real_data import RealSessionDataset, generate_real_block_params, convert_real_actions
+from src.data.agents import (BeliefStateAgent, BlockSwitchingAgent,
+                             InferenceAgent, QLearningAgent, UnknownAgent)
+from src.data.environments import (DynamicForagingTask, EnvironmentInterface,
+                                   SwitchingStimulusTask)
+from src.data.real_data import (RealSessionDataset, convert_real_actions,
+                                generate_real_block_params)
 from src.utils import blockify, normalize_choice_block_side, truncate_blocks
 
 
@@ -36,9 +38,10 @@ class RealExperiment(ExperimentInterface):
                  task_type: Type[EnvironmentInterface] = None,
                  remove_nans: bool = True):
         """
+        A class to hold and reference data from a real experiment consistent with ExperimentInterface object structure.
         :param filename: Path to MATLAB file generated from a real experiment.
         :param task_type: Type of task.
-        :param remove_nans: Whether to remove trials where the animal doesn't make a choice
+        :param remove_nans: Whether to remove trials where the animal doesn't make a choice.
         """
         super().__init__()
         self.__done = True
@@ -83,6 +86,8 @@ class RealExperiment(ExperimentInterface):
         raise NotImplementedError
 
     def get_preprocessed_blocks(self, min_len: int = 15):
+        """
+        """
         blocked_actions = blockify(self.blocks, list(self.action_history))
         normalized_actions = [normalize_choice_block_side(blocked_actions[block_idx], side=self.blocks[block_idx][0])
                               for block_idx in range(len(self.blocks))]
@@ -90,6 +95,11 @@ class RealExperiment(ExperimentInterface):
         return [choice_block for choice_block in truncated_actions if len(choice_block) >= min_len]
 
     def _get_response_times(self):
+        """
+        Compute response times for all trials, only computed for non-nan trials.
+        first_response_time: Time from trial start tone to first (initial) lick counted towards resulting choice.
+        second_response_time: Time from trial start tone to second (confirmatory) lick counted towards resulting choice.
+        """
         first_response_time = np.zeros(self.num_trials)
         second_response_time = np.zeros(self.num_trials)
         for idx in range(self.num_trials):
@@ -107,12 +117,14 @@ class RealExperiment(ExperimentInterface):
 
 
 class BasicSynthExperiment(ExperimentInterface):
+    """Runs a basic synthetic experiment directly from provided agent and environment objects."""
     def __init__(self, agent, environment):
         super().__init__()
         self.agent = agent
         self.environment = environment
 
     def run(self):
+        """Run the agent in the given environment."""
         for ep in range(len(self.environment) + 1):
             self.environment.step()
 
@@ -130,7 +142,7 @@ class BasicSynthExperiment(ExperimentInterface):
 
 
 class SynthExperiment(ExperimentInterface):
-    """Sets up a task environment and agent(s) and runs a synthetic experiment based on configuration settings."""
+    """Sets up a task environment and agent(s) from a configuration file or dict and runs an experiment."""
     def __init__(self, config: Union[str, DictConfig] = None) -> None:
         """
         :param config: Path to config file or a dictionary config.

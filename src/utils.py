@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import numpy as np
 from numpy import ndarray
-from omegaconf import OmegaConf, DictConfig
+from omegaconf import DictConfig, OmegaConf
 
 
 def build_config(env: str,

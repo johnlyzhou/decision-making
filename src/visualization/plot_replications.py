@@ -1,11 +1,12 @@
-from typing import Tuple, Callable, Union
+from typing import Callable, Tuple, Union
 
-from matplotlib import pyplot as plt
 import numpy as np
+from matplotlib import pyplot as plt
 from numpy import ndarray
 
 from src.data.experiments import SynthExperiment
-from src.utils import build_config, blockify, normalize_choice_block_side, pad_ragged_blocks
+from src.utils import (blockify, build_config, normalize_choice_block_side,
+                       pad_ragged_blocks)
 
 TITLES = ["Lapse", "Slope", "Offset", "Efficiency"]
 

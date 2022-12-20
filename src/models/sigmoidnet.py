@@ -1,12 +1,12 @@
 from typing import Tuple
 
 import numpy as np
+import torch
 from pytorch_lightning import LightningModule
 from sklearn.model_selection import train_test_split
-import torch
 from torch import tensor
-from torch.utils.data.dataloader import DataLoader
 from torch.utils.data import TensorDataset
+from torch.utils.data.dataloader import DataLoader
 
 from src.models.components import LinearEmbedder
 from src.models.losses import SupConLoss

@@ -4,7 +4,8 @@ import numpy as np
 from numpy import ndarray
 
 from src.features.fit_curves import epsilon_sigmoid
-from src.visualization.plot_replications import plot_fitted_block, plot_sigmoids
+from src.visualization.plot_replications import (plot_fitted_block,
+                                                 plot_sigmoids)
 
 
 class SynthBlockDataset:
@@ -32,9 +33,14 @@ class SynthBlockDataset:
         self.sigmoid_parameters = np.load(f"{self.data_path}/sigmoid_parameters.npy")
         self.foraging_efficiency = np.load(f"{self.data_path}/foraging_efficiency.npy")
 
-    def get_valid_idxs(self, boundary: int = None):
-        valid_low_s = self.sigmoid_parameters[:, 2] >= 0
-        valid_high_s = self.sigmoid_parameters[:, 2] <= 14
+    def get_valid_idxs(self,
+                       boundary: int = None,
+                       low_s: int = 0,
+                       high_s: int = 14):
+        """Get indices of trials with valid fits according to preset boundaries (should be all if they match parameters
+        bounds during sigmoid fitting)."""
+        valid_low_s = self.sigmoid_parameters[:, 2] >= low_s
+        valid_high_s = self.sigmoid_parameters[:, 2] <= high_s
         valid_idxs = np.argwhere(valid_low_s & valid_high_s)
         if boundary is not None:
             print(np.sum(valid_idxs < boundary))

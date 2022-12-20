@@ -1,6 +1,6 @@
-from operator import mul
 from functools import reduce
-from typing import Tuple, List
+from operator import mul
+from typing import List, Tuple
 
 import torch
 from torch import nn, tensor

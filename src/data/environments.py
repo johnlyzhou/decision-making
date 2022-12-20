@@ -1,6 +1,6 @@
 import abc
 import random
-from typing import List, Tuple, Any
+from typing import Any, List, Tuple
 
 import numpy as np
 from numpy import ndarray

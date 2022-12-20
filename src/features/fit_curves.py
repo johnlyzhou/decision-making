@@ -1,9 +1,9 @@
-from typing import List, Union, Callable
+from typing import Callable, List, Union
 
-import numpy as np
-from numpy import ndarray
 import matplotlib.pyplot as plt
+import numpy as np
 import scipy
+from numpy import ndarray
 from sklearn.linear_model import LogisticRegression
 from tqdm import tqdm
 

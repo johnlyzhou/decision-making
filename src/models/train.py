@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from pytorch_lightning import LightningModule, Trainer, seed_everything
-from pytorch_lightning.callbacks import TQDMProgressBar, ModelCheckpoint, EarlyStopping
+from pytorch_lightning.callbacks import (EarlyStopping, ModelCheckpoint,
+                                         TQDMProgressBar)
 
 
 def train(system_class: LightningModule,

@@ -1,13 +1,14 @@
 import abc
 import copy
 import random
-from typing import Union, Type, List
+from typing import List, Type, Union
 
 import numpy as np
 from numpy import ndarray
 
-from src.data.environments import STIMULI_FREQS, ACTIONS, BOUNDARY_FREQS
-from src.data.environments import SwitchingStimulusTask, DynamicForagingTask, EnvironmentInterface
+from src.data.environments import (ACTIONS, BOUNDARY_FREQS, STIMULI_FREQS,
+                                   DynamicForagingTask, EnvironmentInterface,
+                                   SwitchingStimulusTask)
 
 
 class AgentInterface(metaclass=abc.ABCMeta):
@@ -380,10 +381,10 @@ class BlockSwitchingAgent(AgentInterface):
         :param stimulus_idx: Index of stimulus, references the imported STIMULI_FREQS list.
         :param action: Index of the selected action.
         :param reward: Whether reward was received for the trial (takes value 0 or 1).
-        :param block_switch: Whether or not there is a block transition.
+        :param block_switch: Whether there is a block transition.
         """
-        for strat_idx in range(self.num_strategies):
-            for agent in self.agents[strat_idx]:
+        for strategy_idx in range(self.num_strategies):
+            for agent in self.agents[strategy_idx]:
                 agent.update(action, reward, stimulus_idx=stimulus_idx)
         if block_switch:
             transition_probs = list(self.transition_matrix[self.current_strategy_idx, :])

@@ -4,7 +4,7 @@ from torch import nn
 
 class SupConLoss(nn.Module):
     """Copied from code by authors of Supervised Contrastive Learning: https://arxiv.org/pdf/2004.11362.pdf.
-    Author: Yonglong Tian (yonglong@mit.edu) """
+    Author: Yonglong Tian (yonglong@mit.edu)"""
     def __init__(self, temperature=0.07, contrast_mode='all',
                  base_temperature=0.07):
         super(SupConLoss, self).__init__()
